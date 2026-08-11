@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg,#0f2027,#203a43,#2c5364);
+      min-height: 100vh;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+      width: 100%;
+      max-width: 420px;
+      padding: 32px 28px;
+    }
+    .logo { text-align: center; margin-bottom: 6px; }
+    .logo h1 { font-size: 20px; margin: 0; color: #1a2a33; letter-spacing: 0.5px; }
+    .logo p { color: #7f8c8d; font-size: 13px; margin: 4px 0 20px; }
+    label { font-size: 13px; color: #34495e; font-weight: 600; display: block; margin: 14px 0 6px; }
+    input[type=text], input[type=email], input[type=password], input[type=number], textarea, select {
+      width: 100%;
+      padding: 11px 12px;
+      border-radius: 8px;
+      border: 1px solid #dcdde1;
+      font-size: 14px;
+      outline: none;
+      transition: border 0.2s;
+      font-family: inherit;
+    }
+    input:focus, textarea:focus, select:focus { border-color: #2c5364; }
+    .btn {
+      width: 100%;
+      padding: 12px;
+      margin-top: 18px;
+      border: none;
+      border-radius: 8px;
+      background: #203a43;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: #16262c; }
+    .btn:disabled { background: #95a5a6; cursor: not-allowed; }
+    .btn-secondary { background: #7f8c8d; }
+    .btn-secondary:hover { background: #616a6b; }
+    .switch-link { text-align: center; margin-top: 16px; font-size: 13px; color: #7f8c8d; }
+    .switch-link a { color: #2c5364; font-weight: 600; text-decoration: none; cursor: pointer; }
+    .msg { margin-top: 14px; padding: 10px 12px; border-radius: 8px; font-size: 13px; display: none; }
+    .msg.error { background: #fdecea; color: #c0392b; display: block; }
+    .msg.success { background: #eafaf1; color: #1e8449; display: block; }
+    .msg.warning { background: #fef5e7; color: #b9770e; display: block; font-weight: 600; }
+
+    .att-card { max-width: 480px; }
+    .att-header { text-align: center; margin-bottom: 8px; }
+    .att-header h1 { font-size: 19px; color: #1a2a33; margin: 0 0 4px; }
+    .att-header .user-info { font-size: 14px; color: #34495e; margin-top: 6px; }
+    .att-header .role-badge { display: inline-block; font-size: 11px; background: #ecf0f1; color: #2c5364; padding: 2px 8px; border-radius: 10px; margin-left: 6px; }
+    .avatar-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 10px 0 4px; }
+    .avatar-img { width: 76px; height: 76px; border-radius: 50%; object-fit: cover; border: 3px solid #ecf0f1; }
+    .avatar-placeholder {
+      width: 76px; height: 76px; border-radius: 50%; background: #203a43; color: #fff;
+      display: flex; align-items: center; justify-content: center; font-size: 30px; font-weight: 700;
+      border: 3px solid #ecf0f1;
+    }
+    .avatar-edit-link { font-size: 12px; color: #2c5364; cursor: pointer; text-decoration: underline; }
+    .clock { text-align: center; font-size: 32px; font-weight: 700; color: #203a43; margin: 12px 0 4px; letter-spacing: 1px; }
+    .date-today { text-align: center; font-size: 13px; color: #7f8c8d; margin-bottom: 18px; }
+
+    .status-box { text-align: center; padding: 16px; border-radius: 10px; background: #f4f6f7; margin-bottom: 18px; font-size: 14px; }
+    .status-box b { color: #203a43; }
+
+    .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .btn-action {
+      padding: 14px 8px;
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .btn-action:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-giovao { background: #27ae60; }
+    .btn-giovao:hover:not(:disabled) { background: #1e8449; }
+    .btn-giora { background: #16a085; }
+    .btn-giora:hover:not(:disabled) { background: #117a65; }
+    .btn-nghiphep { background: #e67e22; }
+    .btn-nghiphep:hover:not(:disabled) { background: #ca6f1e; }
+    .btn-khongluong { background: #8e44ad; }
+    .btn-khongluong:hover:not(:disabled) { background: #7d3c98; }
+
+    .logout-link { text-align: center; margin-top: 18px; font-size: 13px; }
+    .logout-link a { color: #c0392b; cursor: pointer; text-decoration: none; font-weight: 600; }
+
+    .admin-box { margin-top: 22px; border-top: 1px solid #ecf0f1; padding-top: 16px; }
+    .admin-box h3 { font-size: 14px; color: #1a2a33; margin: 0 0 10px; }
+    .report-tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+    .report-tab {
+      flex: 1; padding: 7px 6px; border: 1px solid #dcdde1; background: #f4f6f7; color: #34495e;
+      border-radius: 8px; font-size: 12.5px; font-weight: 600; cursor: pointer;
+    }
+    .report-tab.active { background: #203a43; color: #fff; border-color: #203a43; }
+    .report-range { font-size: 11.5px; color: #7f8c8d; margin-bottom: 8px; }
+    table.report { width: 100%; border-collapse: collapse; font-size: 12px; }
+    table.report th, table.report td { border: 1px solid #ecf0f1; padding: 6px 8px; text-align: left; }
+    table.report th { background: #f4f6f7; }
+
+    .modal-overlay {
+      display: none;
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.5);
+      align-items: center; justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal-box {
+      background: #fff;
+      border-radius: 14px;
+      padding: 26px 24px;
+      width: 100%;
+      max-width: 380px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    .modal-box h3 { margin: 0 0 14px; color: #1a2a33; font-size: 17px; }
+    .modal-btn-row { display: flex; gap: 10px; margin-top: 18px; }
+    .modal-btn-row .btn { margin-top: 0; }
+
+    .approval-item {
+      border: 1px solid #ecf0f1; border-radius: 10px; padding: 12px; margin-bottom: 10px; font-size: 13px;
+    }
+    .approval-item .row-btns { display: flex; gap: 8px; margin-top: 10px; }
+    .approval-item .row-btns button { flex: 1; padding: 8px; border: none; border-radius: 6px; color: #fff; font-weight: 600; cursor: pointer; font-size: 12px; }
+    .btn-approve { background: #27ae60; }
+    .btn-reject { background: #c0392b; }
+
+    .user-manage-item { border: 1px solid #ecf0f1; border-radius: 10px; padding: 10px; margin-bottom: 8px; font-size: 13px; }
+    .user-manage-item select { margin-top: 6px; }
+  </style>
+</head>
+<body>
+
+  <!-- ============== VIEW: ĐĂNG NHẬP ============== -->
+  <div class="card" id="viewLogin">
+    <div class="logo">
+      <h1>HỘI VẬT LÝ VIỆT NAM</h1>
+      <p>Hệ thống chấm công nhân viên</p>
+    </div>
+
+    <form id="formLogin" autocomplete="on" onsubmit="return xuLyDangNhapSubmit(event)">
+      <label>Email</label>
+      <input type="email" id="loginEmail" name="username" autocomplete="username" placeholder="ten@gmail.com" required>
+      <label>Mật khẩu</label>
+      <input type="password" id="loginPass" name="password" autocomplete="current-password" placeholder="Nhập mật khẩu đã nhận qua email" required>
+      <button class="btn" id="btnLogin" type="submit">Đăng nhập</button>
+      <div class="switch-link">Chưa có tài khoản? <a onclick="hienThiDangKy()">Đăng ký ngay</a></div>
+      <div class="msg" id="msgLogin"></div>
+    </form>
+
+    <div id="formDangKy" style="display:none">
+      <label>Họ và tên</label>
+      <input type="text" id="regHoTen" placeholder="Nguyễn Văn A">
+      <label>Email (Gmail)</label>
+      <input type="email" id="regEmail" placeholder="ten@gmail.com">
+      <button class="btn" id="btnDangKy" onclick="xuLyDangKy()">Đăng ký</button>
+      <div class="switch-link">Đã có tài khoản? <a onclick="hienThiDangNhap()">Đăng nhập</a></div>
+      <div class="msg" id="msgDangKy"></div>
+    </div>
+  </div>
+
+  <!-- ============== VIEW: CHẤM CÔNG ============== -->
+  <div class="card att-card" id="viewAttendance" style="display:none">
+    <div class="att-header">
+      <h1>HỘI VẬT LÝ VIỆT NAM</h1>
+      <div class="avatar-wrap">
+        <img id="attAvatarImg" class="avatar-img" style="display:none" alt="Ảnh đại diện">
+        <div id="attAvatarPlaceholder" class="avatar-placeholder">?</div>
+        <div class="avatar-edit-link" onclick="document.getElementById('inputAnhDaiDien').click()">Đổi ảnh đại diện</div>
+        <input type="file" id="inputAnhDaiDien" accept="image/*" style="display:none" onchange="xuLyChonAnh(event)">
+      </div>
+      <div class="user-info">
+        <b id="attHoTen"></b>
+        <span class="role-badge" id="attVaiTro"></span>
+        <div id="attChucDanhPhongBan" style="font-size:12px;color:#7f8c8d;margin-top:2px"></div>
+      </div>
+    </div>
+    <div class="clock" id="dongHo">--:--:--</div>
+    <div class="date-today" id="ngayHomNay"></div>
+
+    <div class="status-box" id="statusBox">Đang tải trạng thái...</div>
+
+    <div class="btn-grid">
+      <button class="btn-action btn-giovao" id="btnGioVao" onclick="chamGioVaoRa('GIO_VAO')">✅ GIỜ VÀO</button>
+      <button class="btn-action btn-giora" id="btnGioRa" onclick="chamGioVaoRa('GIO_RA')">🚪 GIỜ RA</button>
+      <button class="btn-action btn-nghiphep" id="btnNghiPhep" onclick="moModalNghiPhep()">🏖️ NGHỈ PHÉP</button>
+      <button class="btn-action btn-khongluong" id="btnKhongLuong" onclick="ghiNhanDon('NGHI_KHONG_LUONG')">📄 NGHỈ KHÔNG LƯƠNG</button>
+    </div>
+
+    <div class="msg" id="msgAtt"></div>
+
+    <!-- Panel Giám đốc: duyệt đơn nghỉ phép -->
+    <div class="admin-box" id="giamDocBox" style="display:none">
+      <h3>📝 Đơn nghỉ phép chờ duyệt</h3>
+      <div id="donChoDuyetContainer">Đang tải...</div>
+    </div>
+
+    <!-- Panel Admin: báo cáo hôm nay -->
+    <div class="admin-box" id="adminBox" style="display:none">
+      <h3>📊 Báo cáo chấm công</h3>
+      <div class="report-tabs" id="reportTabs">
+        <button class="report-tab active" data-loai="NGAY" onclick="doiKhoangBaoCao('NGAY')">Hôm nay</button>
+        <button class="report-tab" data-loai="TUAN" onclick="doiKhoangBaoCao('TUAN')">Tuần này</button>
+        <button class="report-tab" data-loai="THANG" onclick="doiKhoangBaoCao('THANG')">Tháng này</button>
+      </div>
+      <div id="reportContainer">Đang tải...</div>
+    </div>
+
+    <!-- Panel Admin: quản lý vai trò / phòng ban -->
+    <div class="admin-box" id="quanLyUserBox" style="display:none">
+      <h3>👥 Quản lý vai trò, phòng ban &amp; chức danh</h3>
+      <div id="quanLyUserContainer">Đang tải...</div>
+    </div>
+
+    <div class="admin-box" id="doiMatKhauBox">
+      <h3>🔒 Đổi mật khẩu</h3>
+      <div id="formDoiMatKhau" style="display:none">
+        <label>Mật khẩu hiện tại</label>
+        <input type="password" id="mkCu" placeholder="Mật khẩu hiện tại">
+        <label>Mật khẩu mới</label>
+        <input type="password" id="mkMoi" placeholder="Tối thiểu 6 ký tự">
+        <label>Nhập lại mật khẩu mới</label>
+        <input type="password" id="mkMoiXacNhan" placeholder="Nhập lại mật khẩu mới">
+        <button class="btn" id="btnDoiMatKhau" onclick="xuLyDoiMatKhau()" style="margin-top:14px">Xác nhận đổi mật khẩu</button>
+        <div class="msg" id="msgDoiMatKhau"></div>
+      </div>
+      <div class="switch-link" id="linkMoDoiMatKhau"><a onclick="hienFormDoiMatKhau()">Bấm để đổi mật khẩu</a></div>
+    </div>
+
+    <div class="logout-link"><a onclick="dangXuatClick()">Đăng xuất</a></div>
+  </div>
+
+  <!-- ============== MODAL: NGHỈ PHÉP ============== -->
+  <div class="modal-overlay" id="modalNghiPhep">
+    <div class="modal-box">
+      <h3>🏖️ Xin nghỉ phép</h3>
+      <div id="ncBuoc1">
+        <p style="font-size:14px;color:#34495e">Bạn có chắc chắn muốn xin nghỉ phép không?</p>
+        <div class="modal-btn-row">
+          <button class="btn" onclick="ncChonCo()">Có, tôi muốn nghỉ</button>
+          <button class="btn btn-secondary" onclick="dongModal('modalNghiPhep')">Không</button>
+        </div>
+      </div>
+      <div id="ncBuoc2" style="display:none">
+        <label>Bạn muốn nghỉ bao nhiêu ngày?</label>
+        <input type="number" id="ncSoNgay" min="1" max="30" value="1">
+        <label>Lý do (không bắt buộc)</label>
+        <textarea id="ncLyDo" rows="2" placeholder="Ví dụ: việc gia đình"></textarea>
+        <div class="modal-btn-row">
+          <button class="btn" id="btnGuiDonNghiPhep" onclick="ncGuiDon()">Gửi đơn cho Giám đốc duyệt</button>
+          <button class="btn btn-secondary" onclick="dongModal('modalNghiPhep')">Huỷ</button>
+        </div>
+        <div class="msg" id="msgNghiPhep"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // ⚠️ THAY URL NÀY bằng URL Web App sau khi Deploy Apps Script (Deploy > Manage deployments > Web app)
+  // Dạng: https://script.google.com/macros/s/XXXXXXXXXXXXXXXX/exec
+  var WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyMgkQwRiyr1458N1JzuaTpEI_hfQ_zDUJnAylPkGGPGVNWi1506Kef2A6GAjxh1YEvLQ/exec';
+
+  var TOKEN_KEY = 'hoivatly_session_token';
+  var VAI_TRO_HIEN_THI = { admin: 'Quản trị', giamdoc: 'Giám đốc', truongphong: 'Trưởng phòng', nhanvien: 'Nhân viên' };
+
+  /**
+   * Gọi hàm phía Apps Script qua Web App API.
+   * Content-Type để text/plain (không phải application/json) để trình duyệt
+   * coi đây là "simple request", tránh bị chặn bởi preflight OPTIONS mà
+   * Apps Script Web App không xử lý được.
+   * Trả về Promise, dùng .then(res => ...) và .catch(err => ...).
+   */
+  function goiServer(action, params) {
+    return fetch(WEB_APP_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: action, params: params || [] })
+    }).then(function (res) {
+      if (!res.ok) throw new Error('Lỗi mạng (' + res.status + ')');
+      return res.json();
+    });
+  }
+
+  function hienThiDangKy() {
+    document.getElementById('formLogin').style.display = 'none';
+    document.getElementById('formDangKy').style.display = 'block';
+  }
+  function hienThiDangNhap() {
+    document.getElementById('formDangKy').style.display = 'none';
+    document.getElementById('formLogin').style.display = 'block';
+  }
+  function hienMsg(id, loai, text) {
+    var el = document.getElementById(id);
+    el.className = 'msg ' + loai;
+    el.textContent = text;
+  }
+  function moModal(id) { document.getElementById(id).classList.add('show'); }
+  function dongModal(id) { document.getElementById(id).classList.remove('show'); }
+
+  /* ---------- ĐĂNG KÝ ---------- */
+  function xuLyDangKy() {
+    var hoTen = document.getElementById('regHoTen').value.trim();
+    var email = document.getElementById('regEmail').value.trim();
+    if (!hoTen || !email) { hienMsg('msgDangKy', 'error', 'Vui lòng nhập đầy đủ thông tin.'); return; }
+    document.getElementById('btnDangKy').disabled = true;
+    document.getElementById('btnDangKy').textContent = 'Đang xử lý...';
+    goiServer('dangKy', [email, hoTen])
+      .then(function (res) {
+        document.getElementById('btnDangKy').disabled = false;
+        document.getElementById('btnDangKy').textContent = 'Đăng ký';
+        if (res.success) {
+          hienMsg('msgDangKy', 'success', res.message);
+          document.getElementById('regHoTen').value = '';
+          document.getElementById('regEmail').value = '';
+        } else {
+          hienMsg('msgDangKy', 'error', res.message);
+        }
+      })
+      .catch(function (err) {
+        document.getElementById('btnDangKy').disabled = false;
+        document.getElementById('btnDangKy').textContent = 'Đăng ký';
+        hienMsg('msgDangKy', 'error', 'Lỗi: ' + err.message);
+      });
+  }
+
+  /* ---------- ĐĂNG NHẬP ---------- */
+  /* ---------- ĐĂNG NHẬP ---------- */
+  function xuLyDangNhapSubmit(event) {
+    event.preventDefault(); // chặn form load lại trang, nhưng vẫn giữ hành vi "submit" để trình duyệt đề nghị lưu mật khẩu
+    xuLyDangNhap();
+    return false;
+  }
+
+  function xuLyDangNhap() {
+    var email = document.getElementById('loginEmail').value.trim();
+    var pass = document.getElementById('loginPass').value;
+    if (!email || !pass) { hienMsg('msgLogin', 'error', 'Vui lòng nhập email và mật khẩu.'); return; }
+    document.getElementById('btnLogin').disabled = true;
+    document.getElementById('btnLogin').textContent = 'Đang đăng nhập...';
+    goiServer('dangNhap', [email, pass])
+      .then(function (res) {
+        document.getElementById('btnLogin').disabled = false;
+        document.getElementById('btnLogin').textContent = 'Đăng nhập';
+        if (res.success) {
+          localStorage.setItem(TOKEN_KEY, res.token);
+          hienThiTrangChamCong(res);
+        } else {
+          hienMsg('msgLogin', 'error', res.message);
+        }
+      })
+      .catch(function (err) {
+        document.getElementById('btnLogin').disabled = false;
+        document.getElementById('btnLogin').textContent = 'Đăng nhập';
+        hienMsg('msgLogin', 'error', 'Lỗi: ' + err.message);
+      });
+  }
+
+  /* ---------- HIỂN THỊ TRANG CHẤM CÔNG ---------- */
+  function hienThiTrangChamCong(user) {
+    document.getElementById('viewLogin').style.display = 'none';
+    document.getElementById('viewAttendance').style.display = 'block';
+    document.getElementById('attHoTen').textContent = user.hoTen;
+    document.getElementById('attVaiTro').textContent = VAI_TRO_HIEN_THI[user.vaiTro] || user.vaiTro;
+    var chucDanhPhongBan = [user.chucDanh, user.phongBan].filter(Boolean).join(' - ');
+    document.getElementById('attChucDanhPhongBan').textContent = chucDanhPhongBan;
+    document.getElementById('ngayHomNay').textContent = 'Hôm nay: ' + new Date().toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    hienThiAnhDaiDien(user.anhDaiDien, user.hoTen);
+
+    if (user.vaiTro === 'giamdoc' || user.vaiTro === 'admin') {
+      document.getElementById('giamDocBox').style.display = 'block';
+      taiDonChoDuyet();
+    }
+    if (user.vaiTro === 'admin' || user.vaiTro === 'giamdoc' || user.vaiTro === 'truongphong') {
+      document.getElementById('adminBox').style.display = 'block';
+      taiBaoCao();
+    }
+    if (user.vaiTro === 'admin') {
+      document.getElementById('quanLyUserBox').style.display = 'block';
+      taiQuanLyUser();
+    }
+
+    taiTrangThaiHomNay();
+  }
+
+  function taiTrangThaiHomNay() {
+    var token = localStorage.getItem(TOKEN_KEY);
+    goiServer('layTrangThaiHomNay', [token])
+      .then(function (res) {
+        if (!res.success) return;
+        var box = document.getElementById('statusBox');
+
+        if (res.nghiPhepDuocDuyet) {
+          box.innerHTML = 'Bạn đang <b>nghỉ phép đã được duyệt</b> (từ ' + res.nghiPhepDuocDuyet.batDau + ' đến ' + res.nghiPhepDuocDuyet.ketThuc + ')';
+          khoaTatCaNut(true);
+          return;
+        }
+        if (res.nghiKhongLuong) {
+          box.innerHTML = 'Hôm nay bạn đã ghi nhận: <b>Nghỉ không lương</b>';
+          khoaTatCaNut(true);
+          return;
+        }
+
+        var dongTrangThai = [];
+        (res.danhSachGioVao || []).forEach(function (item) {
+          dongTrangThai.push('Giờ vào: <b>' + item.thoiGian + '</b>');
+        });
+        (res.danhSachGioRa || []).forEach(function (item) {
+          dongTrangThai.push('Giờ ra: <b>' + item.thoiGian + '</b>');
+        });
+        if (res.dangChoDuyetNghiPhep) dongTrangThai.push('<span style="color:#e67e22">Đơn nghỉ phép đang chờ Giám đốc duyệt</span>');
+
+        box.innerHTML = dongTrangThai.length > 0 ? dongTrangThai.join('<br>') : 'Bạn <b>chưa</b> ghi nhận trạng thái hôm nay.';
+
+        // Giờ vào/Giờ ra được phép chấm nhiều lần trong ngày - luôn bật
+        document.getElementById('btnGioVao').disabled = false;
+        document.getElementById('btnGioRa').disabled = false;
+        // Chỉ khoá Nghỉ phép/Nghỉ không lương nếu đã có ít nhất 1 lần chấm giờ vào/ra hôm nay
+        var khoaNghi = (res.danhSachGioVao && res.danhSachGioVao.length > 0) || (res.danhSachGioRa && res.danhSachGioRa.length > 0);
+        document.getElementById('btnNghiPhep').disabled = khoaNghi || res.dangChoDuyetNghiPhep;
+        document.getElementById('btnKhongLuong').disabled = khoaNghi;
+      });
+  }
+
+  function khoaTatCaNut(disabled) {
+    document.getElementById('btnGioVao').disabled = disabled;
+    document.getElementById('btnGioRa').disabled = disabled;
+    document.getElementById('btnNghiPhep').disabled = disabled;
+    document.getElementById('btnKhongLuong').disabled = disabled;
+  }
+
+  /* ---------- GIỜ VÀO / GIỜ RA ---------- */
+  function chamGioVaoRa(action) {
+    var token = localStorage.getItem(TOKEN_KEY);
+    hienMsg('msgAtt', 'success', 'Đang lấy vị trí GPS...');
+
+    function guiChamCongLenServer(lat, lng) {
+      goiServer('chamCong', [token, action, lat, lng, navigator.userAgent])
+        .then(function (res) {
+          if (res.success) {
+            hienMsg('msgAtt', 'success', res.message);
+          } else {
+            hienMsg('msgAtt', 'error', res.message);
+          }
+          taiTrangThaiHomNay();
+        })
+        .catch(function (err) { hienMsg('msgAtt', 'error', 'Lỗi: ' + err.message); });
+    }
+
+    function batBuocDangXuat(lyDo) {
+      hienMsg('msgAtt', 'error', '🚫 ' + lyDo + ' Việc chia sẻ vị trí là bắt buộc để chấm công. Đang đăng xuất...');
+      setTimeout(dangXuatClick, 2500);
+    }
+
+    if (!navigator.geolocation) {
+      batBuocDangXuat('Trình duyệt của bạn không hỗ trợ định vị GPS.');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      function (pos) {
+        guiChamCongLenServer(pos.coords.latitude, pos.coords.longitude);
+      },
+      function (err) {
+        // Bắt buộc phải chia sẻ vị trí mới được chấm công - từ chối/lỗi GPS sẽ bị đăng xuất ngay
+        batBuocDangXuat('Bạn chưa chia sẻ vị trí (' + err.message + ').');
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }
+
+  /* ---------- NGHỈ KHÔNG LƯƠNG (ghi nhận trực tiếp, không cần vị trí) ---------- */
+  function ghiNhanDon(action) {
+    var token = localStorage.getItem(TOKEN_KEY);
+    khoaTatCaNut(true);
+    hienMsg('msgAtt', 'success', 'Đang xử lý...');
+    goiServer('chamCong', [token, action, null, null, navigator.userAgent])
+      .then(function (res) {
+        if (res.success) { hienMsg('msgAtt', 'success', res.message); }
+        else { hienMsg('msgAtt', 'error', res.message); }
+        taiTrangThaiHomNay();
+      })
+      .catch(function (err) { hienMsg('msgAtt', 'error', 'Lỗi: ' + err.message); taiTrangThaiHomNay(); });
+  }
+
+  /* ---------- MODAL NGHỈ PHÉP ---------- */
+  function moModalNghiPhep() {
+    document.getElementById('ncBuoc1').style.display = 'block';
+    document.getElementById('ncBuoc2').style.display = 'none';
+    document.getElementById('msgNghiPhep').className = 'msg';
+    document.getElementById('msgNghiPhep').textContent = '';
+    moModal('modalNghiPhep');
+  }
+  function ncChonCo() {
+    document.getElementById('ncBuoc1').style.display = 'none';
+    document.getElementById('ncBuoc2').style.display = 'block';
+  }
+  function ncGuiDon() {
+    var soNgay = parseInt(document.getElementById('ncSoNgay').value, 10);
+    var lyDo = document.getElementById('ncLyDo').value.trim();
+    if (!soNgay || soNgay < 1) { hienMsg('msgNghiPhep', 'error', 'Vui lòng nhập số ngày nghỉ hợp lệ.'); return; }
+
+    var token = localStorage.getItem(TOKEN_KEY);
+    var btn = document.getElementById('btnGuiDonNghiPhep');
+    btn.disabled = true;
+    btn.textContent = 'Đang gửi...';
+    goiServer('guiDonNghiPhep', [token, soNgay, lyDo])
+      .then(function (res) {
+        btn.disabled = false;
+        btn.textContent = 'Gửi đơn cho Giám đốc duyệt';
+        if (res.success) {
+          hienMsg('msgNghiPhep', 'success', res.message);
+          setTimeout(function () { dongModal('modalNghiPhep'); taiTrangThaiHomNay(); }, 1800);
+        } else {
+          hienMsg('msgNghiPhep', 'error', res.message);
+        }
+      })
+      .catch(function (err) {
+        btn.disabled = false;
+        btn.textContent = 'Gửi đơn cho Giám đốc duyệt';
+        hienMsg('msgNghiPhep', 'error', 'Lỗi: ' + err.message);
+      });
+  }
+
+  /* ---------- GIÁM ĐỐC: DUYỆT ĐƠN NGHỈ PHÉP ---------- */
+  function taiDonChoDuyet() {
+    var token = localStorage.getItem(TOKEN_KEY);
+    goiServer('layDonChoDuyetChoGiamDoc', [token])
+      .then(function (res) {
+        var container = document.getElementById('donChoDuyetContainer');
+        if (!res.success) { container.textContent = res.message; return; }
+        if (res.danhSach.length === 0) { container.innerHTML = '<p style="font-size:13px;color:#7f8c8d">Không có đơn nào đang chờ duyệt.</p>'; return; }
+        var html = '';
+        res.danhSach.forEach(function (d) {
+          html += '<div class="approval-item">' +
+            '<b>' + d.hoTen + '</b> (' + (d.phongBan || 'chưa gán phòng ban') + ')<br>' +
+            'Nghỉ ' + d.soNgay + ' ngày: ' + d.ngayBatDau + ' → ' + d.ngayKetThuc + '<br>' +
+            (d.lyDo ? 'Lý do: ' + d.lyDo + '<br>' : '') +
+            '<div class="row-btns">' +
+            '<button class="btn-approve" onclick="xuLyDuyetDon(\'' + d.maDon + '\',\'Đã duyệt\')">Duyệt</button>' +
+            '<button class="btn-reject" onclick="xuLyDuyetDon(\'' + d.maDon + '\',\'Từ chối\')">Từ chối</button>' +
+            '</div></div>';
+        });
+        container.innerHTML = html;
+      });
+  }
+
+  function xuLyDuyetDon(maDon, ketQua) {
+    var token = localStorage.getItem(TOKEN_KEY);
+    goiServer('duyetDonNghiPhep', [token, maDon, ketQua])
+      .then(function (res) {
+        alert(res.message);
+        taiDonChoDuyet();
+        taiBaoCao();
+      })
+      .catch(function (err) { alert('Lỗi: ' + err.message); });
+  }
+
+  /* ---------- ADMIN / GIÁM ĐỐC / TRƯỞNG PHÒNG: BÁO CÁO ---------- */
+  var loaiBaoCaoHienTai = 'NGAY';
+
+  function doiKhoangBaoCao(loai) {
+    loaiBaoCaoHienTai = loai;
+    var tabs = document.querySelectorAll('#reportTabs .report-tab');
+    for (var i = 0; i < tabs.length; i++) {
+      tabs[i].classList.toggle('active', tabs[i].getAttribute('data-loai') === loai);
+    }
+    taiBaoCao();
+  }
+
+  function taiBaoCao() {
+    var token = localStorage.getItem(TOKEN_KEY);
+    var container = document.getElementById('reportContainer');
+    container.textContent = 'Đang tải...';
+    goiServer('layBaoCaoTheoKhoang', [token, loaiBaoCaoHienTai])
+      .then(function (res) {
+        if (!res.success) { container.textContent = res.message; return; }
+
+        if (res.loaiKhoang === 'NGAY') {
+          var html = '<table class="report"><tr><th>Họ tên</th><th>Chức danh</th><th>Phòng ban</th><th>Trạng thái</th><th>Chi tiết</th></tr>';
+          res.baoCao.danhSach.forEach(function (row) {
+            html += '<tr><td>' + row.hoTen + '</td><td>' + (row.chucDanh || '-') + '</td><td>' + (row.phongBan || '-') + '</td><td>' + row.trangThai + '</td><td>' + (row.thoiGian || '-') + '</td></tr>';
+          });
+          html += '</table>';
+          container.innerHTML = html;
+          return;
+        }
+
+        // TUAN / THANG: bảng tổng hợp số ngày theo trạng thái
+        var html2 = '<div class="report-range">Khoảng: ' + res.baoCao.tuNgay + ' → ' + res.baoCao.denNgay + '</div>' +
+          '<table class="report"><tr><th>Họ tên</th><th>Phòng ban</th><th>Đã chấm công</th><th>Nghỉ phép</th><th>Nghỉ không lương</th><th>Nghỉ không lý do</th></tr>';
+        res.baoCao.danhSach.forEach(function (row) {
+          html2 += '<tr><td>' + row.hoTen + '</td><td>' + (row.phongBan || '-') + '</td>' +
+            '<td>' + row.soNgayDaChamCong + '</td>' +
+            '<td>' + row.soNgayNghiPhep + '</td>' +
+            '<td>' + row.soNgayNghiKhongLuong + '</td>' +
+            '<td' + (row.soNgayNghiKhongLyDo > 0 ? ' style="color:#c0392b;font-weight:700"' : '') + '>' + row.soNgayNghiKhongLyDo + '</td></tr>';
+        });
+        html2 += '</table>';
+        container.innerHTML = html2;
+      })
+      .catch(function (err) { container.textContent = 'Lỗi: ' + err.message; });
+  }
+
+  /* ---------- ADMIN: QUẢN LÝ VAI TRÒ / PHÒNG BAN ---------- */
+  function taiQuanLyUser() {
+    var token = localStorage.getItem(TOKEN_KEY);
+    goiServer('layDanhSachTatCaUserChoAdmin', [token])
+      .then(function (res) {
+        var container = document.getElementById('quanLyUserContainer');
+        if (!res.success) { container.textContent = res.message; return; }
+        var html = '';
+        res.danhSach.forEach(function (u) {
+          var emailSafe = u.email.replace(/'/g, "\\'");
+          html += '<div class="user-manage-item">' +
+            '<b>' + u.hoTen + '</b> (' + u.email + ')<br>' +
+            '<select id="vt_' + btoa(u.email) + '">' +
+            '<option value="nhanvien"' + (u.vaiTro === 'nhanvien' ? ' selected' : '') + '>Nhân viên</option>' +
+            '<option value="truongphong"' + (u.vaiTro === 'truongphong' ? ' selected' : '') + '>Trưởng phòng</option>' +
+            '<option value="giamdoc"' + (u.vaiTro === 'giamdoc' ? ' selected' : '') + '>Giám đốc</option>' +
+            '<option value="admin"' + (u.vaiTro === 'admin' ? ' selected' : '') + '>Admin</option>' +
+            '</select>' +
+            '<input type="text" id="pb_' + btoa(u.email) + '" placeholder="Tên phòng ban" value="' + (u.phongBan || '') + '" style="margin-top:6px">' +
+            '<input type="text" id="cd_' + btoa(u.email) + '" placeholder="Chức danh (VD: Trưởng phòng Kinh doanh)" value="' + (u.chucDanh || '') + '" style="margin-top:6px">' +
+            '<button class="btn" style="margin-top:8px;padding:8px;font-size:12px" onclick="luuVaiTro(\'' + emailSafe + '\')">Lưu</button>' +
+            '</div>';
+        });
+        container.innerHTML = html;
+      });
+  }
+
+  function luuVaiTro(email) {
+    var token = localStorage.getItem(TOKEN_KEY);
+    var vaiTroMoi = document.getElementById('vt_' + btoa(email)).value;
+    var phongBanMoi = document.getElementById('pb_' + btoa(email)).value.trim();
+    var chucDanhMoi = document.getElementById('cd_' + btoa(email)).value.trim();
+    goiServer('capNhatVaiTroPhongBan', [token, email, vaiTroMoi, phongBanMoi, chucDanhMoi])
+      .then(function (res) {
+        alert(res.message);
+        taiQuanLyUser();
+      })
+      .catch(function (err) { alert('Lỗi: ' + err.message); });
+  }
+
+  /* ---------- ẢNH ĐẠI DIỆN ---------- */
+  function hienThiAnhDaiDien(base64Anh, hoTen) {
+    var img = document.getElementById('attAvatarImg');
+    var placeholder = document.getElementById('attAvatarPlaceholder');
+    if (base64Anh) {
+      img.src = 'data:image/jpeg;base64,' + base64Anh;
+      img.style.display = 'block';
+      placeholder.style.display = 'none';
+    } else {
+      img.style.display = 'none';
+      placeholder.style.display = 'flex';
+      placeholder.textContent = (hoTen || '?').trim().charAt(0).toUpperCase();
+    }
+  }
+
+  function xuLyChonAnh(event) {
+    var file = event.target.files[0];
+    if (!file) return;
+    if (!file.type || file.type.indexOf('image/') !== 0) {
+      hienMsg('msgAtt', 'error', 'Vui lòng chọn 1 tệp hình ảnh.');
+      return;
+    }
+
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      var img = new Image();
+      img.onload = function () {
+        // Cắt ảnh thành hình vuông ở giữa rồi nén nhỏ lại để lưu gọn trong Google Sheets
+        var kichThuoc = 200;
+        var canvas = document.createElement('canvas');
+        canvas.width = kichThuoc;
+        canvas.height = kichThuoc;
+        var ctx = canvas.getContext('2d');
+        var canhNho = Math.min(img.width, img.height);
+        var sx = (img.width - canhNho) / 2;
+        var sy = (img.height - canhNho) / 2;
+        ctx.drawImage(img, sx, sy, canhNho, canhNho, 0, 0, kichThuoc, kichThuoc);
+
+        var base64 = canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
+        var token = localStorage.getItem(TOKEN_KEY);
+
+        hienMsg('msgAtt', 'success', 'Đang tải ảnh lên...');
+        goiServer('capNhatAnhDaiDien', [token, base64])
+          .then(function (res) {
+            if (res.success) {
+              hienThiAnhDaiDien(base64, document.getElementById('attHoTen').textContent);
+              hienMsg('msgAtt', 'success', res.message);
+            } else {
+              hienMsg('msgAtt', 'error', res.message);
+            }
+          })
+          .catch(function (err) { hienMsg('msgAtt', 'error', 'Lỗi: ' + err.message); });
+      };
+      img.onerror = function () { hienMsg('msgAtt', 'error', 'Không đọc được ảnh, vui lòng thử ảnh khác.'); };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  /* ---------- ĐỔI MẬT KHẨU ---------- */
+  function hienFormDoiMatKhau() {
+    document.getElementById('formDoiMatKhau').style.display = 'block';
+    document.getElementById('linkMoDoiMatKhau').style.display = 'none';
+  }
+  function xuLyDoiMatKhau() {
+    var mkCu = document.getElementById('mkCu').value;
+    var mkMoi = document.getElementById('mkMoi').value;
+    var mkMoiXacNhan = document.getElementById('mkMoiXacNhan').value;
+    if (!mkCu || !mkMoi || !mkMoiXacNhan) { hienMsg('msgDoiMatKhau', 'error', 'Vui lòng nhập đầy đủ các trường.'); return; }
+    if (mkMoi !== mkMoiXacNhan) { hienMsg('msgDoiMatKhau', 'error', 'Mật khẩu mới nhập lại không khớp.'); return; }
+    if (mkMoi.length < 6) { hienMsg('msgDoiMatKhau', 'error', 'Mật khẩu mới phải có ít nhất 6 ký tự.'); return; }
+
+    var token = localStorage.getItem(TOKEN_KEY);
+    var btn = document.getElementById('btnDoiMatKhau');
+    btn.disabled = true;
+    btn.textContent = 'Đang xử lý...';
+    goiServer('doiMatKhau', [token, mkCu, mkMoi])
+      .then(function (res) {
+        btn.disabled = false;
+        btn.textContent = 'Xác nhận đổi mật khẩu';
+        if (res.success) {
+          hienMsg('msgDoiMatKhau', 'success', res.message);
+          document.getElementById('mkCu').value = '';
+          document.getElementById('mkMoi').value = '';
+          document.getElementById('mkMoiXacNhan').value = '';
+        } else {
+          hienMsg('msgDoiMatKhau', 'error', res.message);
+        }
+      })
+      .catch(function (err) {
+        btn.disabled = false;
+        btn.textContent = 'Xác nhận đổi mật khẩu';
+        hienMsg('msgDoiMatKhau', 'error', 'Lỗi: ' + err.message);
+      });
+  }
+
+  /* ---------- ĐĂNG XUẤT ---------- */
+  function dangXuatClick() {
+    var token = localStorage.getItem(TOKEN_KEY);
+    goiServer('dangXuat', [token]).catch(function () {}); // không cần chờ/xử lý kết quả
+    localStorage.removeItem(TOKEN_KEY);
+
+    // Không dùng location.reload() vì không đáng tin cậy trong iframe sandbox của Apps Script
+    // (một số trình duyệt/thiết bị chặn reload bên trong khung này) - chuyển màn hình trực tiếp bằng JS.
+    document.getElementById('viewAttendance').style.display = 'none';
+    document.getElementById('viewLogin').style.display = 'block';
+    document.getElementById('formDangKy').style.display = 'none';
+
+    // Reset lại form đăng nhập cho gọn, không để lộ mật khẩu cũ trên màn hình
+    document.getElementById('loginEmail').value = '';
+    document.getElementById('loginPass').value = '';
+    document.getElementById('msgLogin').className = 'msg';
+    document.getElementById('msgLogin').textContent = '';
+
+    // Reset lại các panel quản trị để lần đăng nhập sau (có thể là người khác) không thấy dữ liệu cũ
+    document.getElementById('giamDocBox').style.display = 'none';
+    document.getElementById('adminBox').style.display = 'none';
+    document.getElementById('quanLyUserBox').style.display = 'none';
+  }
+  function xuLyHetPhien() {
+    localStorage.removeItem(TOKEN_KEY);
+    document.getElementById('viewAttendance').style.display = 'none';
+    document.getElementById('viewLogin').style.display = 'block';
+    document.getElementById('formDangKy').style.display = 'none';
+    document.getElementById('giamDocBox').style.display = 'none';
+    document.getElementById('adminBox').style.display = 'none';
+    document.getElementById('quanLyUserBox').style.display = 'none';
+  }
+
+  /* ---------- ĐỒNG HỒ ---------- */
+  setInterval(function () {
+    document.getElementById('dongHo').textContent = new Date().toLocaleTimeString('vi-VN');
+  }, 1000);
+
+  /* ---------- KHỞI ĐỘNG ---------- */
+  window.onload = function () {
+    var token = localStorage.getItem(TOKEN_KEY);
+    if (token) {
+      goiServer('kiemTraSession', [token])
+        .then(function (res) {
+          if (res.success) { hienThiTrangChamCong(res); }
+          else { xuLyHetPhien(); }
+        })
+        .catch(xuLyHetPhien);
+    }
+  };
+</script>
+</body>
+</html>
