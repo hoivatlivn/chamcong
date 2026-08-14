@@ -2,6 +2,8 @@
 <html>
 <head>
   <meta charset="utf-8">
+  <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -74,6 +76,12 @@
       border: 3px solid #ecf0f1;
     }
     .avatar-edit-link { font-size: 12px; color: #2c5364; cursor: pointer; text-decoration: underline; }
+    .video-camera { width: 100%; border-radius: 10px; background: #000; transform: scaleX(-1); }
+    .canvas-an { display: none; }
+    .khuonmat-banner {
+      background: #eef6fb; color: #2c5364; font-size: 12px; padding: 8px 10px; border-radius: 8px;
+      margin: 8px 0; text-align: center; cursor: pointer; font-weight: 600;
+    }
     .clock { text-align: center; font-size: 32px; font-weight: 700; color: #203a43; margin: 12px 0 4px; letter-spacing: 1px; }
     .date-today { text-align: center; font-size: 13px; color: #7f8c8d; margin-bottom: 18px; }
 
@@ -116,6 +124,21 @@
     }
     .report-tab.active { background: #203a43; color: #fff; border-color: #203a43; }
     .report-range { font-size: 11.5px; color: #7f8c8d; margin-bottom: 8px; }
+    .btn-vitri {
+      display: inline-block; font-size: 11px; font-weight: 600; color: #fff; background: #2c5364;
+      padding: 4px 8px; border-radius: 6px; text-decoration: none; white-space: nowrap;
+    }
+    .btn-vitri:hover { background: #203a43; }
+    #locTuyChonBox { background: #f7f9fa; border-radius: 8px; padding: 10px; margin-bottom: 10px; }
+    #locTuyChonBox label { font-size: 12px; font-weight: 600; color: #34495e; display: block; margin: 8px 0 3px; }
+    #locTuyChonBox select, #locTuyChonBox input[type="date"],
+    #xuatExcelBox select {
+      width: 100%; padding: 7px 8px; border: 1px solid #dcdde1; border-radius: 6px; font-size: 13px; box-sizing: border-box;
+    }
+    #xuatExcelBox label { font-size: 12px; font-weight: 600; color: #34495e; display: block; margin: 8px 0 3px; }
+    .loc-checkbox-row { display: flex; flex-wrap: wrap; gap: 10px; }
+    .loc-checkbox { display: flex !important; align-items: center; gap: 4px; font-weight: 500 !important; font-size: 12.5px !important; margin: 0 !important; }
+    .loc-checkbox input { width: auto; }
     table.report { width: 100%; border-collapse: collapse; font-size: 12px; }
     table.report th, table.report td { border: 1px solid #ecf0f1; padding: 6px 8px; text-align: left; }
     table.report th { background: #f4f6f7; }
@@ -192,11 +215,16 @@
         <div id="attAvatarPlaceholder" class="avatar-placeholder">?</div>
         <div class="avatar-edit-link" onclick="document.getElementById('inputAnhDaiDien').click()">Đổi ảnh đại diện</div>
         <input type="file" id="inputAnhDaiDien" accept="image/*" style="display:none" onchange="xuLyChonAnh(event)">
+        <div class="avatar-edit-link" onclick="moModalCamera('DANG_KY')">📷 Thêm khuôn mặt (đối chiếu phụ)</div>
+        <div class="avatar-edit-link" style="font-size:11px;color:#95a5a6" onclick="moModalCamera('DANG_KY_LAI')">🗑️ Xoá hết & đăng ký lại từ đầu</div>
       </div>
       <div class="user-info">
         <b id="attHoTen"></b>
         <span class="role-badge" id="attVaiTro"></span>
         <div id="attChucDanhPhongBan" style="font-size:12px;color:#7f8c8d;margin-top:2px"></div>
+      </div>
+      <div class="khuonmat-banner" id="khuonMatBanner" style="display:none" onclick="moModalCamera('DANG_KY')">
+        ℹ️ Bạn chưa đăng ký khuôn mặt — bấm để đăng ký (giúp đối chiếu phụ, chống chấm hộ, không bắt buộc)
       </div>
     </div>
     <div class="clock" id="dongHo">--:--:--</div>
@@ -205,8 +233,8 @@
     <div class="status-box" id="statusBox">Đang tải trạng thái...</div>
 
     <div class="btn-grid">
-      <button class="btn-action btn-giovao" id="btnGioVao" onclick="chamGioVaoRa('GIO_VAO')">✅ GIỜ VÀO</button>
-      <button class="btn-action btn-giora" id="btnGioRa" onclick="chamGioVaoRa('GIO_RA')">🚪 GIỜ RA</button>
+      <button class="btn-action btn-giovao" id="btnGioVao" onclick="batDauChamCongKemKhuonMat('GIO_VAO')">✅ GIỜ VÀO</button>
+      <button class="btn-action btn-giora" id="btnGioRa" onclick="batDauChamCongKemKhuonMat('GIO_RA')">🚪 GIỜ RA</button>
       <button class="btn-action btn-nghiphep" id="btnNghiPhep" onclick="moModalNghiPhep()">🏖️ NGHỈ PHÉP</button>
       <button class="btn-action btn-khongluong" id="btnKhongLuong" onclick="ghiNhanDon('NGHI_KHONG_LUONG')">📄 NGHỈ KHÔNG LƯƠNG</button>
     </div>
@@ -226,8 +254,42 @@
         <button class="report-tab active" data-loai="NGAY" onclick="doiKhoangBaoCao('NGAY')">Hôm nay</button>
         <button class="report-tab" data-loai="TUAN" onclick="doiKhoangBaoCao('TUAN')">Tuần này</button>
         <button class="report-tab" data-loai="THANG" onclick="doiKhoangBaoCao('THANG')">Tháng này</button>
+        <button class="report-tab" data-loai="TUYCHON" onclick="doiKhoangBaoCao('TUYCHON')">Tuỳ chọn</button>
       </div>
+
+      <div id="locTuyChonBox" style="display:none">
+        <label>Nhân viên</label>
+        <select id="locNhanVien"><option value="TATCA">-- Tất cả nhân viên --</option></select>
+
+        <label>Từ ngày</label>
+        <input type="date" id="locTuNgay">
+
+        <label>Đến ngày</label>
+        <input type="date" id="locDenNgay">
+
+        <label>Tiêu chí (chọn 1 hoặc nhiều)</label>
+        <div class="loc-checkbox-row">
+          <label class="loc-checkbox"><input type="checkbox" value="DI_MUON" checked> Đi muộn</label>
+          <label class="loc-checkbox"><input type="checkbox" value="VE_SOM" checked> Về sớm</label>
+          <label class="loc-checkbox"><input type="checkbox" value="NGHI" checked> Nghỉ</label>
+          <label class="loc-checkbox"><input type="checkbox" value="KHONG_PHEP" checked> Không phép</label>
+        </div>
+
+        <button class="btn" onclick="xemBaoCaoTuyChinh()" style="margin-top:10px">🔍 Xem báo cáo</button>
+      </div>
+
       <div id="reportContainer">Đang tải...</div>
+    </div>
+
+    <!-- Panel Admin: xuất bảng công tháng ra file Excel -->
+    <div class="admin-box" id="xuatExcelBox" style="display:none">
+      <h3>📥 Xuất bảng công tháng (Excel)</h3>
+      <label>Tháng</label>
+      <select id="xuatThang"></select>
+      <label>Năm</label>
+      <select id="xuatNam"></select>
+      <button class="btn" onclick="xuatBangCongExcel()" style="margin-top:10px" id="btnXuatExcel">📥 Xuất file Excel</button>
+      <div class="msg" id="msgXuatExcel"></div>
     </div>
 
     <!-- Panel Admin: quản lý vai trò / phòng ban -->
@@ -238,16 +300,17 @@
 
     <div class="admin-box" id="doiMatKhauBox">
       <h3>🔒 Đổi mật khẩu</h3>
-      <div id="formDoiMatKhau" style="display:none">
+      <form id="formDoiMatKhau" autocomplete="on" onsubmit="return xuLyDoiMatKhauSubmit(event)" style="display:none">
+        <input type="text" id="dmkEmailAn" name="username" autocomplete="username" style="display:none">
         <label>Mật khẩu hiện tại</label>
-        <input type="password" id="mkCu" placeholder="Mật khẩu hiện tại">
+        <input type="password" id="mkCu" name="current-password" autocomplete="current-password" placeholder="Mật khẩu hiện tại">
         <label>Mật khẩu mới</label>
-        <input type="password" id="mkMoi" placeholder="Tối thiểu 6 ký tự">
+        <input type="password" id="mkMoi" name="new-password" autocomplete="new-password" placeholder="Tối thiểu 6 ký tự">
         <label>Nhập lại mật khẩu mới</label>
-        <input type="password" id="mkMoiXacNhan" placeholder="Nhập lại mật khẩu mới">
-        <button class="btn" id="btnDoiMatKhau" onclick="xuLyDoiMatKhau()" style="margin-top:14px">Xác nhận đổi mật khẩu</button>
+        <input type="password" id="mkMoiXacNhan" name="new-password-confirm" autocomplete="new-password" placeholder="Nhập lại mật khẩu mới">
+        <button class="btn" id="btnDoiMatKhau" type="submit" style="margin-top:14px">Xác nhận đổi mật khẩu</button>
         <div class="msg" id="msgDoiMatKhau"></div>
-      </div>
+      </form>
       <div class="switch-link" id="linkMoDoiMatKhau"><a onclick="hienFormDoiMatKhau()">Bấm để đổi mật khẩu</a></div>
     </div>
 
@@ -279,13 +342,76 @@
     </div>
   </div>
 
+  <!-- ============== MODAL: CAMERA KHUÔN MẶT (điểm nhận diện phụ - dùng chung cho đăng ký & chấm công) ============== -->
+  <div class="modal-overlay" id="modalCamera">
+    <div class="modal-box">
+      <h3 id="cameraTitle">📷 Khuôn mặt</h3>
+      <p id="cameraHuongDan" style="font-size:13px;color:#7f8c8d;margin:0 0 10px">Đưa khuôn mặt vào giữa khung hình, đủ sáng, nhìn thẳng vào camera, rồi bấm chụp.</p>
+      <select id="chonCamera" style="display:none;width:100%;padding:6px 8px;border:1px solid #dcdde1;border-radius:6px;font-size:12.5px;margin-bottom:8px" onchange="doiCamera()"></select>
+      <video id="videoCamera" class="video-camera" autoplay muted playsinline></video>
+      <canvas id="canvasCamera" class="canvas-an"></canvas>
+      <div class="msg" id="msgCamera"></div>
+      <div class="modal-btn-row">
+        <button class="btn" id="btnChupKhuonMat" onclick="chupVaXuLyKhuonMat()">📸 Chụp</button>
+        <button class="btn btn-secondary" onclick="dongModalCamera(true)">Bỏ qua</button>
+      </div>
+    </div>
+  </div>
+
 <script>
   // ⚠️ THAY URL NÀY bằng URL Web App sau khi Deploy Apps Script (Deploy > Manage deployments > Web app)
   // Dạng: https://script.google.com/macros/s/XXXXXXXXXXXXXXXX/exec
-  var WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbyMgkQwRiyr1458N1JzuaTpEI_hfQ_zDUJnAylPkGGPGVNWi1506Kef2A6GAjxh1YEvLQ/exec';
+  var WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbw0sHFW8iYTOlebJ1ZEMufkV49lKTqXtYJF5s4kqZGd-TFjssgEc3vGXQ59vAqavpvSCA/exec';
 
   var TOKEN_KEY = 'hoivatly_session_token';
   var VAI_TRO_HIEN_THI = { admin: 'Quản trị', giamdoc: 'Giám đốc', truongphong: 'Trưởng phòng', nhanvien: 'Nhân viên' };
+
+  /**
+   * Mã định danh thiết bị: sinh 1 lần duy nhất và lưu trong localStorage của
+   * trình duyệt, dùng để phân biệt chính xác đây có phải cùng 1 máy vật lý
+   * hay không (đáng tin cậy hơn nhiều so với chỉ đọc User-Agent, vì trình
+   * duyệt không cho biết đời máy cụ thể). Sẽ đổi nếu người dùng xoá dữ liệu
+   * trình duyệt hoặc dùng cửa sổ ẩn danh - đó là giới hạn không thể tránh
+   * khỏi khi làm hoàn toàn phía trình duyệt.
+   */
+  function layDeviceId() {
+    var KEY = 'hoivatly_device_id';
+    var id = localStorage.getItem(KEY);
+    if (!id) {
+      id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID()
+        : ('dev-' + Date.now() + '-' + Math.random().toString(36).slice(2));
+      localStorage.setItem(KEY, id);
+    }
+    return id;
+  }
+
+  // Độ phân giải màn hình + tỉ lệ pixel - dùng làm dấu hiệu phụ để phân biệt
+  // thiết bị khi không có DeviceId (ví dụ trình duyệt chặn localStorage).
+  function layDoPhanGiaiManHinh() {
+    try {
+      return screen.width + 'x' + screen.height + '@' + (window.devicePixelRatio || 1) + 'x';
+    } catch (e) {
+      return '';
+    }
+  }
+
+  // Tên GPU (card đồ hoạ) đọc qua WebGL - dấu hiệu phụ khác để phân biệt
+  // thiết bị, hữu ích nhất với PC/Mac (VD "Apple M1", "NVIDIA GeForce RTX
+  // 3060", "Intel Iris Xe"). Một số trình duyệt gần đây (đặc biệt Chrome mới)
+  // có thể trả về chuỗi chung chung như "ANGLE (...)" thay vì tên GPU thật vì
+  // lý do bảo mật riêng tư - trường hợp đó coi như không lấy được, không sao.
+  function layThongTinGPU() {
+    try {
+      var canvas = document.createElement('canvas');
+      var gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+      if (!gl) return '';
+      var info = gl.getExtension('WEBGL_debug_renderer_info');
+      if (!info) return '';
+      return gl.getParameter(info.UNMASKED_RENDERER_WEBGL) || '';
+    } catch (e) {
+      return '';
+    }
+  }
 
   /**
    * Gọi hàm phía Apps Script qua Web App API.
@@ -380,15 +506,32 @@
   }
 
   /* ---------- HIỂN THỊ TRANG CHẤM CÔNG ---------- */
+  var vaiTroHienTai = null;
+  var emailHienTai = null;
+  var batKhuonMatHienTai = false;
+
   function hienThiTrangChamCong(user) {
+    vaiTroHienTai = user.vaiTro;
+    emailHienTai = user.email;
+    document.getElementById('dmkEmailAn').value = user.email || '';
     document.getElementById('viewLogin').style.display = 'none';
     document.getElementById('viewAttendance').style.display = 'block';
-    document.getElementById('attHoTen').textContent = user.hoTen;
+    document.getElementById('attHoTen').textContent = (user.maSo ? user.maSo + ' - ' : '') + user.hoTen;
     document.getElementById('attVaiTro').textContent = VAI_TRO_HIEN_THI[user.vaiTro] || user.vaiTro;
     var chucDanhPhongBan = [user.chucDanh, user.phongBan].filter(Boolean).join(' - ');
     document.getElementById('attChucDanhPhongBan').textContent = chucDanhPhongBan;
     document.getElementById('ngayHomNay').textContent = 'Hôm nay: ' + new Date().toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     hienThiAnhDaiDien(user.anhDaiDien, user.hoTen);
+
+    batKhuonMatHienTai = !!user.batKhuonMat;
+    var banner = document.getElementById('khuonMatBanner');
+    banner.style.display = (user.batKhuonMat && !user.coKhuonMat) ? 'block' : 'none';
+
+    // Tải sẵn model AI ngay từ lúc đăng nhập (chạy ngầm, không chặn giao diện) -
+    // để lúc bấm Giờ vào/Giờ ra thì model gần như đã có sẵn trong cache trình
+    // duyệt, tránh phải chờ tải (và giảm khả năng gặp lỗi mạng/CDN đúng lúc
+    // đang thao tác chấm công).
+    if (batKhuonMatHienTai) { taiModelKhuonMat().catch(function () {}); }
 
     if (user.vaiTro === 'giamdoc' || user.vaiTro === 'admin') {
       document.getElementById('giamDocBox').style.display = 'block';
@@ -397,6 +540,9 @@
     if (user.vaiTro === 'admin' || user.vaiTro === 'giamdoc' || user.vaiTro === 'truongphong') {
       document.getElementById('adminBox').style.display = 'block';
       taiBaoCao();
+      taiDanhSachNhanVienChoLoc();
+      document.getElementById('xuatExcelBox').style.display = 'block';
+      khoiTaoChonThangNam();
     }
     if (user.vaiTro === 'admin') {
       document.getElementById('quanLyUserBox').style.display = 'block';
@@ -453,15 +599,16 @@
   }
 
   /* ---------- GIỜ VÀO / GIỜ RA ---------- */
-  function chamGioVaoRa(action) {
+  function chamGioVaoRa(action, khuonMatDescriptor) {
     var token = localStorage.getItem(TOKEN_KEY);
     hienMsg('msgAtt', 'success', 'Đang lấy vị trí GPS...');
 
     function guiChamCongLenServer(lat, lng) {
-      goiServer('chamCong', [token, action, lat, lng, navigator.userAgent])
+      goiServer('chamCong', [token, action, lat, lng, navigator.userAgent, layDoPhanGiaiManHinh(), layDeviceId(), khuonMatDescriptor || null, layThongTinGPU()])
         .then(function (res) {
           if (res.success) {
             hienMsg('msgAtt', 'success', res.message);
+            if (res.khuonMatDaKhop) { danhDauDaXacMinhKhuonMatHomNay(); }
           } else {
             hienMsg('msgAtt', 'error', res.message);
           }
@@ -491,12 +638,241 @@
     );
   }
 
+  /* ---------- KHUÔN MẶT (face-api.js) - ĐIỂM NHẬN DIỆN PHỤ, KHÔNG BẮT BUỘC ----------
+   * Mục đích: hạn chế việc dùng acc/pass của người khác để chấm hộ. Chỉ cần
+   * chụp 1 tấm, so sánh tương đối - không làm liveness/chống giả mạo phức tạp
+   * vì đây không phải cơ chế xác thực chính, có thể "Bỏ qua" bất cứ lúc nào
+   * mà không ảnh hưởng đến việc chấm công.
+   */
+  var modelsDaTai = false;
+  var dangTaiModelPromise = null;
+  var cameraStream = null;
+  var cheDoModalCameraHienTai = null; // 'DANG_KY' | 'GIO_VAO' | 'GIO_RA'
+
+  // URL chính: nằm trong thư mục "weights" ngay tại repo gốc face-api.js (KHÔNG
+  // dùng repo "face-api.js-models" nữa vì repo đó đã đổi cấu trúc, chia model
+  // vào từng thư mục con riêng khiến link cũ bị 404).
+  var MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights/';
+  // URL dự phòng: dùng khi CDN chính lỗi/bị chặn - fork đang được bảo trì tích cực,
+  // cùng cấu trúc file nên dùng thay thế trực tiếp được.
+  var MODEL_URL_DU_PHONG = 'https://cdn.jsdelivr.net/gh/vladmandic/face-api@master/model/';
+
+  function taiModelKhuonMat() {
+    if (modelsDaTai) return Promise.resolve();
+    if (dangTaiModelPromise) return dangTaiModelPromise; // đang tải rồi thì dùng chung, tránh gọi trùng nhiều lần
+
+    function taiTu(url) {
+      return Promise.all([
+        faceapi.nets.tinyFaceDetector.loadFromUri(url),
+        faceapi.nets.faceLandmark68Net.loadFromUri(url),
+        faceapi.nets.faceRecognitionNet.loadFromUri(url)
+      ]);
+    }
+    function cho(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+    // CDN đôi khi chập chờn tạm thời (lỗi 404/network 1 lần rồi tự khỏi) - thử
+    // lại chính CDN đó 1 lần sau 1 giây trước khi mới chuyển sang CDN dự phòng,
+    // để tránh báo lỗi oan cho người dùng ở những lần chập chờn rất ngắn.
+    dangTaiModelPromise = taiTu(MODEL_URL)
+      .catch(function () { return cho(1000).then(function () { return taiTu(MODEL_URL); }); })
+      .catch(function () { return taiTu(MODEL_URL_DU_PHONG); })
+      .catch(function () { return cho(1000).then(function () { return taiTu(MODEL_URL_DU_PHONG); }); })
+      .then(function () { modelsDaTai = true; dangTaiModelPromise = null; })
+      .catch(function (err) { dangTaiModelPromise = null; throw err; });
+    return dangTaiModelPromise;
+  }
+
+  /**
+   * Lưu cờ "đã xác minh khuôn mặt hôm nay" trong localStorage, gắn theo CẢ
+   * ngày lẫn email đang đăng nhập - để nếu nhiều người dùng chung 1 máy/trình
+   * duyệt (kiosk) trong cùng ngày thì không bị lẫn cờ của người khác.
+   */
+  function khoaLuuXacMinhHomNay() {
+    return 'hoivatly_khuonmat_daxacminh_' + new Date().toISOString().slice(0, 10) + '_' + (emailHienTai || '');
+  }
+  function daXacMinhKhuonMatHomNay() {
+    return localStorage.getItem(khoaLuuXacMinhHomNay()) === '1';
+  }
+  function danhDauDaXacMinhKhuonMatHomNay() {
+    localStorage.setItem(khoaLuuXacMinhHomNay(), '1');
+  }
+
+  /**
+   * Bấm nút GIỜ VÀO/GIỜ RA sẽ gọi hàm này trước: nếu tính năng khuôn mặt
+   * đang bật thì mở camera để chụp 1 tấm rồi mới chấm công; nếu đang tắt
+   * thì chấm công luôn như bình thường. Nếu khuôn mặt ĐÃ khớp thành công ít
+   * nhất 1 lần trong hôm nay rồi thì bỏ qua bước chụp cho các lần chấm công
+   * tiếp theo trong ngày, đỡ phải chụp lại nhiều lần không cần thiết.
+   */
+  function batDauChamCongKemKhuonMat(action) {
+    if (batKhuonMatHienTai && !daXacMinhKhuonMatHomNay()) {
+      moModalCamera(action);
+    } else {
+      chamGioVaoRa(action, null);
+    }
+  }
+
+  function moModalCamera(cheDo) {
+    cheDoModalCameraHienTai = cheDo;
+    var tieuDe = document.getElementById('cameraTitle');
+    if (cheDo === 'DANG_KY') tieuDe.textContent = '📷 Thêm khuôn mặt';
+    else if (cheDo === 'DANG_KY_LAI') tieuDe.textContent = '📷 Xoá hết & đăng ký lại';
+    else if (cheDo === 'GIO_VAO') tieuDe.textContent = '📷 Chụp nhanh - Giờ vào (không bắt buộc)';
+    else tieuDe.textContent = '📷 Chụp nhanh - Giờ ra (không bắt buộc)';
+
+    document.getElementById('msgCamera').className = 'msg';
+    document.getElementById('msgCamera').textContent = '';
+    document.getElementById('btnChupKhuonMat').disabled = true;
+    document.getElementById('btnChupKhuonMat').textContent = 'Đang chuẩn bị...';
+    document.getElementById('chonCamera').style.display = 'none';
+    moModal('modalCamera');
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      hienMsg('msgCamera', 'error', 'Trình duyệt không hỗ trợ camera. Bấm "Bỏ qua" để tiếp tục chấm công bình thường.');
+      return;
+    }
+
+    taiModelKhuonMat().catch(function () {}); // tải song song, không chặn việc mở camera
+
+    // Mở camera mặc định trước, SAU ĐÓ mới liệt kê danh sách camera (nhiều
+    // trình duyệt chỉ trả đủ tên các camera sau khi đã được cấp quyền ít nhất 1 lần)
+    moCameraTheoId(null);
+  }
+
+  function moCameraTheoId(deviceId) {
+    var rangBuoc = deviceId ? { video: { deviceId: { exact: deviceId } } } : { video: { facingMode: 'user' } };
+    if (cameraStream) { cameraStream.getTracks().forEach(function (t) { t.stop(); }); cameraStream = null; }
+
+    navigator.mediaDevices.getUserMedia(rangBuoc).then(function (stream) {
+      cameraStream = stream;
+      var video = document.getElementById('videoCamera');
+      video.srcObject = cameraStream;
+      document.getElementById('btnChupKhuonMat').disabled = false;
+      document.getElementById('btnChupKhuonMat').textContent = '📸 Chụp';
+      document.getElementById('msgCamera').className = 'msg';
+      document.getElementById('msgCamera').textContent = '';
+      capNhatDanhSachCamera();
+    }).catch(function (err) {
+      var loiChiTiet = (err && err.message) ? err.message : String(err);
+      var goiY = 'Bấm "Bỏ qua" để tiếp tục chấm công bình thường - đây chỉ là bước phụ.';
+
+      // 1 số laptop có camera hồng ngoại riêng cho Windows Hello (đăng nhập
+      // bằng khuôn mặt), driver của loại camera này đôi khi trả lỗi khó hiểu
+      // khi trình duyệt cố mở qua web (không liên quan đến quyền camera).
+      if (/faceid|not readable|notreadable|could not start/i.test(loiChiTiet)) {
+        goiY = 'Có thể máy bạn có camera hồng ngoại (Windows Hello) đang xung đột. ' +
+          'Thử chọn camera khác ở danh sách bên trên (nếu có), hoặc bấm "Bỏ qua" để chấm công bình thường.';
+      } else if (/permission|notallowed/i.test(loiChiTiet)) {
+        goiY = 'Trình duyệt đang chặn quyền camera cho trang này. Kiểm tra biểu tượng khoá/camera cạnh thanh địa chỉ. ' + goiY;
+      }
+
+      hienMsg('msgCamera', 'error', 'Không mở được camera (' + loiChiTiet + '). ' + goiY);
+      capNhatDanhSachCamera(); // vẫn thử liệt kê để người dùng có thể đổi camera khác
+    });
+  }
+
+  // Liệt kê các camera hiện có; chỉ hiện dropdown nếu máy có từ 2 camera trở lên
+  function capNhatDanhSachCamera() {
+    if (!navigator.mediaDevices.enumerateDevices) return;
+    navigator.mediaDevices.enumerateDevices().then(function (thietBi) {
+      var cacCamera = thietBi.filter(function (d) { return d.kind === 'videoinput'; });
+      var sel = document.getElementById('chonCamera');
+      if (cacCamera.length < 2) { sel.style.display = 'none'; return; }
+
+      sel.innerHTML = '';
+      cacCamera.forEach(function (cam, idx) {
+        var opt = document.createElement('option');
+        opt.value = cam.deviceId;
+        opt.textContent = cam.label || ('Camera ' + (idx + 1));
+        sel.appendChild(opt);
+      });
+      sel.style.display = 'block';
+    }).catch(function () {});
+  }
+
+  function doiCamera() {
+    var deviceId = document.getElementById('chonCamera').value;
+    document.getElementById('btnChupKhuonMat').disabled = true;
+    document.getElementById('btnChupKhuonMat').textContent = 'Đang chuyển camera...';
+    moCameraTheoId(deviceId);
+  }
+
+  // boQua = true nghĩa là đóng modal mà KHÔNG có kết quả khuôn mặt (do người
+  // dùng chủ động bấm Bỏ qua, hoặc do camera lỗi) - vẫn tiếp tục chấm công
+  // bình thường nếu đang ở giữa quy trình GIỜ VÀO/GIỜ RA.
+  function dongModalCamera(boQua) {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(function (track) { track.stop(); });
+      cameraStream = null;
+    }
+    var cheDo = cheDoModalCameraHienTai;
+    dongModal('modalCamera');
+    cheDoModalCameraHienTai = null;
+
+    if (boQua && (cheDo === 'GIO_VAO' || cheDo === 'GIO_RA')) {
+      chamGioVaoRa(cheDo, null);
+    }
+  }
+
+  function chupVaXuLyKhuonMat() {
+    var video = document.getElementById('videoCamera');
+    var btn = document.getElementById('btnChupKhuonMat');
+    btn.disabled = true;
+    btn.textContent = 'Đang phân tích...';
+    hienMsg('msgCamera', 'success', 'Đang phân tích khuôn mặt...');
+
+    taiModelKhuonMat().then(function () {
+      return faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+    })
+      .then(function (ketQua) {
+        if (!ketQua) {
+          hienMsg('msgCamera', 'error', 'Không thấy khuôn mặt rõ ràng. Thử lại hoặc bấm "Bỏ qua".');
+          btn.disabled = false;
+          btn.textContent = '📸 Chụp';
+          return;
+        }
+
+        var descriptorArray = Array.from(ketQua.descriptor);
+        var cheDo = cheDoModalCameraHienTai;
+
+        if (cheDo === 'DANG_KY' || cheDo === 'DANG_KY_LAI') {
+          dongModalCamera(false);
+          xuLyDangKyKhuonMat(descriptorArray, cheDo === 'DANG_KY_LAI');
+        } else {
+          dongModalCamera(false);
+          chamGioVaoRa(cheDo, descriptorArray);
+        }
+      })
+      .catch(function (err) {
+        hienMsg('msgCamera', 'error', 'Lỗi khi phân tích khuôn mặt: ' + err.message + '. Thử lại hoặc bấm "Bỏ qua".');
+        btn.disabled = false;
+        btn.textContent = '📸 Chụp';
+      });
+  }
+
+  function xuLyDangKyKhuonMat(descriptorArray, thayThe) {
+    var token = localStorage.getItem(TOKEN_KEY);
+    hienMsg('msgAtt', 'success', 'Đang lưu khuôn mặt...');
+    goiServer('capNhatKhuonMat', [token, descriptorArray, !!thayThe])
+      .then(function (res) {
+        if (res.success) {
+          hienMsg('msgAtt', 'success', res.message);
+          document.getElementById('khuonMatBanner').style.display = 'none';
+        } else {
+          hienMsg('msgAtt', 'error', res.message);
+        }
+      })
+      .catch(function (err) { hienMsg('msgAtt', 'error', 'Lỗi: ' + err.message); });
+  }
+
   /* ---------- NGHỈ KHÔNG LƯƠNG (ghi nhận trực tiếp, không cần vị trí) ---------- */
   function ghiNhanDon(action) {
     var token = localStorage.getItem(TOKEN_KEY);
     khoaTatCaNut(true);
     hienMsg('msgAtt', 'success', 'Đang xử lý...');
-    goiServer('chamCong', [token, action, null, null, navigator.userAgent])
+    goiServer('chamCong', [token, action, null, null, navigator.userAgent, layDoPhanGiaiManHinh(), layDeviceId(), null, layThongTinGPU()])
       .then(function (res) {
         if (res.success) { hienMsg('msgAtt', 'success', res.message); }
         else { hienMsg('msgAtt', 'error', res.message); }
@@ -587,21 +963,316 @@
     for (var i = 0; i < tabs.length; i++) {
       tabs[i].classList.toggle('active', tabs[i].getAttribute('data-loai') === loai);
     }
+
+    if (loai === 'TUYCHON') {
+      document.getElementById('locTuyChonBox').style.display = 'block';
+      document.getElementById('reportContainer').innerHTML = 'Chọn tiêu chí rồi bấm "Xem báo cáo".';
+      return;
+    }
+    document.getElementById('locTuyChonBox').style.display = 'none';
     taiBaoCao();
+  }
+
+  // Nạp danh sách nhân viên vào dropdown lọc (chỉ email/họ tên/phòng ban, không có dữ liệu nhạy cảm)
+  function taiDanhSachNhanVienChoLoc() {
+    var token = localStorage.getItem(TOKEN_KEY);
+    goiServer('layDanhSachNhanVienChoLoc', [token])
+      .then(function (res) {
+        if (!res.success) return;
+        var sel = document.getElementById('locNhanVien');
+        res.danhSach.forEach(function (u) {
+          var opt = document.createElement('option');
+          opt.value = u.email;
+          opt.textContent = (u.maSo ? u.maSo + ' - ' : '') + u.hoTen + (u.phongBan ? ' (' + u.phongBan + ')' : '');
+          sel.appendChild(opt);
+        });
+      })
+      .catch(function () {});
+  }
+
+  function xemBaoCaoTuyChinh() {
+    var token = localStorage.getItem(TOKEN_KEY);
+    var email = document.getElementById('locNhanVien').value;
+    var tuNgay = document.getElementById('locTuNgay').value;
+    var denNgay = document.getElementById('locDenNgay').value;
+    var container = document.getElementById('reportContainer');
+
+    if (!tuNgay || !denNgay) { container.innerHTML = 'Vui lòng chọn đủ Từ ngày và Đến ngày.'; return; }
+
+    var cacLoaiLoc = [];
+    document.querySelectorAll('#locTuyChonBox .loc-checkbox input:checked').forEach(function (cb) {
+      cacLoaiLoc.push(cb.value);
+    });
+    if (cacLoaiLoc.length === 0) { container.innerHTML = 'Vui lòng chọn ít nhất 1 tiêu chí.'; return; }
+
+    var xemViTri = coQuyenXemViTri();
+    container.textContent = 'Đang tải...';
+    goiServer('layBaoCaoTuyChinh', [token, email, tuNgay, denNgay, cacLoaiLoc])
+      .then(function (res) {
+        if (!res.success) { container.textContent = res.message; return; }
+        if (res.danhSach.length === 0) { container.innerHTML = 'Không có ngày nào khớp tiêu chí đã chọn.'; return; }
+
+        var html = '<table class="report"><tr><th>Ngày</th><th>Mã số</th><th>Họ tên</th><th>Phòng ban</th><th>Loại</th><th>Chi tiết</th></tr>';
+        res.danhSach.forEach(function (row) {
+          html += '<tr><td>' + row.ngay + '</td><td>' + (row.maSo || '-') + '</td><td>' + row.hoTen + '</td><td>' + (row.phongBan || '-') + '</td>' +
+            '<td>' + row.loai + '</td><td>' + row.chiTiet + '</td></tr>';
+        });
+        html += '</table>';
+        container.innerHTML = html;
+      })
+      .catch(function (err) { container.textContent = 'Lỗi: ' + err.message; });
+  }
+
+  /* ---------- XUẤT BẢNG CÔNG THÁNG RA FILE EXCEL ---------- */
+  function khoiTaoChonThangNam() {
+    var selThang = document.getElementById('xuatThang');
+    var selNam = document.getElementById('xuatNam');
+    if (selThang.options.length > 0) return; // đã khởi tạo rồi, không lặp lại
+
+    var homNay = new Date();
+    for (var t = 1; t <= 12; t++) {
+      var opt = document.createElement('option');
+      opt.value = t;
+      opt.textContent = 'Tháng ' + t;
+      if (t === homNay.getMonth() + 1) opt.selected = true;
+      selThang.appendChild(opt);
+    }
+    var namHienTai = homNay.getFullYear();
+    for (var n = namHienTai; n >= namHienTai - 3; n--) {
+      var optN = document.createElement('option');
+      optN.value = n;
+      optN.textContent = 'Năm ' + n;
+      selNam.appendChild(optN);
+    }
+  }
+
+  // Màu tô nền theo đúng chú giải trong mẫu: KL đỏ đậm chữ trắng, M hồng, S vàng nhạt, P xanh nhạt, CN xám
+  var MAU_KL = 'FF922B21', MAU_KL_CHU = 'FFFFFFFF';
+  var MAU_M = 'FFF5B7B1';
+  var MAU_S = 'FFFDEBD0';
+  var MAU_P = 'FFD5F5E3';
+  var MAU_CN = 'FFD5D8DC';
+  var MAU_HEADER = 'FF4A2545';
+
+  function toMauNen(hex) { return { type: 'pattern', pattern: 'solid', fgColor: { argb: hex } }; }
+
+  function xuatBangCongExcel() {
+    var token = localStorage.getItem(TOKEN_KEY);
+    var thang = document.getElementById('xuatThang').value;
+    var nam = document.getElementById('xuatNam').value;
+    var btn = document.getElementById('btnXuatExcel');
+    btn.disabled = true;
+    btn.textContent = 'Đang tạo file...';
+    hienMsg('msgXuatExcel', 'success', 'Đang lấy dữ liệu...');
+
+    goiServer('layBangCongThang', [token, thang, nam])
+      .then(function (res) {
+        if (!res.success) { hienMsg('msgXuatExcel', 'error', res.message); btn.disabled = false; btn.textContent = '📥 Xuất file Excel'; return; }
+        return taoFileExcelBangCong(res);
+      })
+      .then(function () {
+        btn.disabled = false;
+        btn.textContent = '📥 Xuất file Excel';
+        hienMsg('msgXuatExcel', 'success', 'Đã tạo xong file Excel.');
+      })
+      .catch(function (err) {
+        btn.disabled = false;
+        btn.textContent = '📥 Xuất file Excel';
+        hienMsg('msgXuatExcel', 'error', 'Lỗi: ' + err.message);
+      });
+  }
+
+  function taoFileExcelBangCong(res) {
+    var wb = new ExcelJS.Workbook();
+    var ws = wb.addWorksheet('Tháng ' + res.thang);
+    var soCotNgay = res.soNgayTrongThang;
+    var cotDauNgay = 4; // A=STT, B=MSV|Họ tên, C=Vào/Ra, D = ngày 01...
+
+    // ----- Dòng chú giải (legend) -----
+    ws.getCell(1, 1).value = 'Chú giải:';
+    ws.getCell(1, 1).font = { bold: true };
+    var chuGiai = [
+      { nhan: 'KL: Không lương', mau: MAU_KL, chuTrang: true },
+      { nhan: 'M: Đi muộn', mau: MAU_M },
+      { nhan: 'S: Về sớm', mau: MAU_S },
+      { nhan: 'P: Nghỉ có lương', mau: MAU_P }
+    ];
+    chuGiai.forEach(function (cg, idx) {
+      var c = ws.getCell(2, 2 + idx * 2);
+      c.value = cg.nhan;
+      c.fill = toMauNen(cg.mau);
+      c.font = { bold: true, color: { argb: cg.chuTrang ? MAU_KL_CHU : 'FF000000' } };
+    });
+
+    // ----- Hàng tiêu đề (2 dòng: số ngày / thứ) -----
+    var HANG_TIEU_DE_1 = 4, HANG_TIEU_DE_2 = 5, HANG_DU_LIEU_DAU = 6;
+
+    ws.mergeCells(HANG_TIEU_DE_1, 1, HANG_TIEU_DE_2, 1); ws.getCell(HANG_TIEU_DE_1, 1).value = 'STT';
+    ws.mergeCells(HANG_TIEU_DE_1, 2, HANG_TIEU_DE_2, 2); ws.getCell(HANG_TIEU_DE_1, 2).value = 'MSV | Họ và tên';
+    ws.mergeCells(HANG_TIEU_DE_1, 3, HANG_TIEU_DE_2, 3); ws.getCell(HANG_TIEU_DE_1, 3).value = 'Vào / Ra';
+
+    for (var d = 1; d <= soCotNgay; d++) {
+      var col = cotDauNgay + d - 1;
+      var thongTinNgay = res.danhSach.length > 0 ? res.danhSach[0].cacNgay[d - 1] : null;
+      var oNgay = ws.getCell(HANG_TIEU_DE_1, col);
+      oNgay.value = (d < 10 ? '0' + d : d);
+      var oThu = ws.getCell(HANG_TIEU_DE_2, col);
+      oThu.value = thongTinNgay ? thongTinNgay.thu : '';
+      if (thongTinNgay && thongTinNgay.laChuNhat) {
+        oNgay.fill = toMauNen(MAU_CN);
+        oThu.fill = toMauNen(MAU_CN);
+      }
+      ws.getColumn(col).width = 5;
+    }
+
+    var cotSauNgay = cotDauNgay + soCotNgay;
+    var tieuDeTongHop = [
+      { ten: 'Công tháng', mau: null },
+      { ten: 'M', mau: MAU_M },
+      { ten: 'S', mau: MAU_S },
+      { ten: 'KL', mau: MAU_KL, chuTrang: true },
+      { ten: 'P', mau: MAU_P },
+      { ten: 'Công tính lương', mau: null }
+    ];
+    tieuDeTongHop.forEach(function (tt, idx) {
+      var col = cotSauNgay + idx;
+      ws.mergeCells(HANG_TIEU_DE_1, col, HANG_TIEU_DE_2, col);
+      var c = ws.getCell(HANG_TIEU_DE_1, col);
+      c.value = tt.ten;
+      if (tt.mau) { c.fill = toMauNen(tt.mau); c.font = { bold: true, color: { argb: tt.chuTrang ? MAU_KL_CHU : 'FF000000' } }; }
+      ws.getColumn(col).width = 10;
+    });
+
+    // Định dạng chung cho toàn bộ dòng tiêu đề
+    [HANG_TIEU_DE_1, HANG_TIEU_DE_2].forEach(function (hang) {
+      var row = ws.getRow(hang);
+      row.eachCell({ includeEmpty: true }, function (cell) {
+        if (!cell.font || !cell.font.color) cell.font = Object.assign({}, cell.font, { bold: true, color: { argb: 'FFFFFFFF' } });
+        if (!cell.fill) cell.fill = toMauNen(MAU_HEADER);
+        cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+        cell.border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
+      });
+    });
+
+    ws.getColumn(1).width = 5;
+    ws.getColumn(2).width = 28;
+    ws.getColumn(3).width = 8;
+
+    // ----- Dữ liệu từng nhân viên: 2 dòng Vào/Ra -----
+    var hangHienTai = HANG_DU_LIEU_DAU;
+    res.danhSach.forEach(function (nv, idx) {
+      var hangVao = hangHienTai, hangRa = hangHienTai + 1;
+
+      ws.mergeCells(hangVao, 1, hangRa, 1);
+      ws.getCell(hangVao, 1).value = idx + 1;
+      ws.mergeCells(hangVao, 2, hangRa, 2);
+      ws.getCell(hangVao, 2).value = (nv.maSo || nv.email) + ' | ' + nv.hoTen;
+      ws.getCell(hangVao, 2).alignment = { vertical: 'middle', wrapText: true };
+
+      ws.getCell(hangVao, 3).value = 'Vào';
+      ws.getCell(hangRa, 3).value = 'Ra';
+
+      nv.cacNgay.forEach(function (ngayInfo, d) {
+        var col = cotDauNgay + d;
+        var oVao = ws.getCell(hangVao, col);
+        var oRa = ws.getCell(hangRa, col);
+        if (ngayInfo.laChuNhat) {
+          oVao.fill = toMauNen(MAU_CN);
+          oRa.fill = toMauNen(MAU_CN);
+          return;
+        }
+        if (ngayInfo.vao) {
+          oVao.value = ngayInfo.vao;
+          oVao.fill = toMauNen(ngayInfo.vao === 'KL' ? MAU_KL : (ngayInfo.vao === 'M' ? MAU_M : MAU_P));
+          if (ngayInfo.vao === 'KL') oVao.font = { bold: true, color: { argb: MAU_KL_CHU } };
+        }
+        if (ngayInfo.ra) {
+          oRa.value = ngayInfo.ra;
+          oRa.fill = toMauNen(ngayInfo.ra === 'KL' ? MAU_KL : (ngayInfo.ra === 'S' ? MAU_S : MAU_P));
+          if (ngayInfo.ra === 'KL') oRa.font = { bold: true, color: { argb: MAU_KL_CHU } };
+        }
+      });
+
+      var giaTriTongHop = [nv.congThang, nv.soMuon, nv.soSom, nv.soKL, nv.soPhep, nv.congTinhLuong];
+      giaTriTongHop.forEach(function (gt, idxTT) {
+        var col = cotSauNgay + idxTT;
+        ws.mergeCells(hangVao, col, hangRa, col);
+        var c = ws.getCell(hangVao, col);
+        c.value = gt;
+        c.alignment = { horizontal: 'center', vertical: 'middle' };
+        c.font = { bold: true };
+      });
+
+      // Viền cho toàn bộ vùng dữ liệu của nhân viên này
+      for (var r = hangVao; r <= hangRa; r++) {
+        for (var c2 = 1; c2 <= cotSauNgay + giaTriTongHop.length - 1; c2++) {
+          var cell = ws.getCell(r, c2);
+          cell.border = { top: { style: 'thin' }, bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' } };
+          if (c2 >= cotDauNgay && c2 < cotSauNgay) cell.alignment = { horizontal: 'center', vertical: 'middle' };
+        }
+      }
+
+      hangHienTai = hangRa + 1;
+    });
+
+    return wb.xlsx.writeBuffer().then(function (buffer) {
+      var blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'BangCongThang_' + res.thang + '_' + res.nam + '.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+  }
+
+  // Chỉ admin và giám đốc được xem vị trí GPS của nhân viên; trưởng phòng thì không.
+  function coQuyenXemViTri() {
+    return vaiTroHienTai === 'admin' || vaiTroHienTai === 'giamdoc';
+  }
+
+  function taoNutViTri(viTri) {
+    if (!viTri) return '-';
+    var url = 'https://www.google.com/maps?q=' + encodeURIComponent(viTri.lat + ',' + viTri.lng);
+    return '<a class="btn-vitri" href="' + url + '" target="_blank" rel="noopener">📍 Xem vị trí</a>';
+  }
+
+  // Hiển thị mỗi lần chấm công trên 1 dòng riêng: "08:03 (Cách 350m)" - kèm
+  // cảnh báo (trễ/sớm/khoảng cách) nếu có, không gộp nhiều lần lại với nhau.
+  function dinhDangDsGio(ds) {
+    if (!ds || ds.length === 0) return '-';
+    return ds.map(function (x) {
+      return x.thoiGian + (x.canhBao ? ' <span style="color:#c0392b">(' + x.canhBao + ')</span>' : '');
+    }).join('<br>');
   }
 
   function taiBaoCao() {
     var token = localStorage.getItem(TOKEN_KEY);
     var container = document.getElementById('reportContainer');
     container.textContent = 'Đang tải...';
+    var xemViTri = coQuyenXemViTri();
     goiServer('layBaoCaoTheoKhoang', [token, loaiBaoCaoHienTai])
       .then(function (res) {
         if (!res.success) { container.textContent = res.message; return; }
 
         if (res.loaiKhoang === 'NGAY') {
-          var html = '<table class="report"><tr><th>Họ tên</th><th>Chức danh</th><th>Phòng ban</th><th>Trạng thái</th><th>Chi tiết</th></tr>';
+          var html = '<table class="report"><tr><th>Mã số</th><th>Họ tên</th><th>Chức danh</th><th>Phòng ban</th><th>Trạng thái</th><th>Giờ vào</th><th>Giờ ra</th>' + (xemViTri ? '<th>Vị trí</th>' : '') + '</tr>';
           res.baoCao.danhSach.forEach(function (row) {
-            html += '<tr><td>' + row.hoTen + '</td><td>' + (row.chucDanh || '-') + '</td><td>' + (row.phongBan || '-') + '</td><td>' + row.trangThai + '</td><td>' + (row.thoiGian || '-') + '</td></tr>';
+            var coDsChamCong = (row.dsGioVao && row.dsGioVao.length) || (row.dsGioRa && row.dsGioRa.length);
+            var cotGioVao, cotGioRa;
+            if (coDsChamCong) {
+              cotGioVao = dinhDangDsGio(row.dsGioVao);
+              cotGioRa = dinhDangDsGio(row.dsGioRa);
+            } else {
+              // Nghỉ phép / nghỉ không lương / nghỉ không lý do: không có giờ vào/ra, dùng chung 1 dòng ghi chú
+              cotGioVao = row.thoiGian || '-';
+              cotGioRa = '-';
+            }
+            html += '<tr><td>' + (row.maSo || '-') + '</td><td>' + row.hoTen + '</td><td>' + (row.chucDanh || '-') + '</td><td>' + (row.phongBan || '-') + '</td><td>' + row.trangThai + '</td>' +
+              '<td>' + cotGioVao + '</td><td>' + cotGioRa + '</td>' +
+              (xemViTri ? '<td>' + taoNutViTri(row.viTri) + '</td>' : '') + '</tr>';
           });
           html += '</table>';
           container.innerHTML = html;
@@ -610,13 +1281,14 @@
 
         // TUAN / THANG: bảng tổng hợp số ngày theo trạng thái
         var html2 = '<div class="report-range">Khoảng: ' + res.baoCao.tuNgay + ' → ' + res.baoCao.denNgay + '</div>' +
-          '<table class="report"><tr><th>Họ tên</th><th>Phòng ban</th><th>Đã chấm công</th><th>Nghỉ phép</th><th>Nghỉ không lương</th><th>Nghỉ không lý do</th></tr>';
+          '<table class="report"><tr><th>Mã số</th><th>Họ tên</th><th>Phòng ban</th><th>Đã chấm công</th><th>Nghỉ phép</th><th>Nghỉ không lương</th><th>Nghỉ không lý do</th>' + (xemViTri ? '<th>Vị trí</th>' : '') + '</tr>';
         res.baoCao.danhSach.forEach(function (row) {
-          html2 += '<tr><td>' + row.hoTen + '</td><td>' + (row.phongBan || '-') + '</td>' +
+          html2 += '<tr><td>' + (row.maSo || '-') + '</td><td>' + row.hoTen + '</td><td>' + (row.phongBan || '-') + '</td>' +
             '<td>' + row.soNgayDaChamCong + '</td>' +
             '<td>' + row.soNgayNghiPhep + '</td>' +
             '<td>' + row.soNgayNghiKhongLuong + '</td>' +
-            '<td' + (row.soNgayNghiKhongLyDo > 0 ? ' style="color:#c0392b;font-weight:700"' : '') + '>' + row.soNgayNghiKhongLyDo + '</td></tr>';
+            '<td' + (row.soNgayNghiKhongLyDo > 0 ? ' style="color:#c0392b;font-weight:700"' : '') + '>' + row.soNgayNghiKhongLyDo + '</td>' +
+            (xemViTri ? '<td>' + taoNutViTri(row.viTri) + '</td>' : '') + '</tr>';
         });
         html2 += '</table>';
         container.innerHTML = html2;
@@ -635,13 +1307,14 @@
         res.danhSach.forEach(function (u) {
           var emailSafe = u.email.replace(/'/g, "\\'");
           html += '<div class="user-manage-item">' +
-            '<b>' + u.hoTen + '</b> (' + u.email + ')<br>' +
+            '<b>' + (u.maSo ? u.maSo + ' - ' : '') + u.hoTen + '</b> (' + u.email + ')<br>' +
             '<select id="vt_' + btoa(u.email) + '">' +
             '<option value="nhanvien"' + (u.vaiTro === 'nhanvien' ? ' selected' : '') + '>Nhân viên</option>' +
             '<option value="truongphong"' + (u.vaiTro === 'truongphong' ? ' selected' : '') + '>Trưởng phòng</option>' +
             '<option value="giamdoc"' + (u.vaiTro === 'giamdoc' ? ' selected' : '') + '>Giám đốc</option>' +
             '<option value="admin"' + (u.vaiTro === 'admin' ? ' selected' : '') + '>Admin</option>' +
             '</select>' +
+            '<input type="text" id="ms_' + btoa(u.email) + '" placeholder="Mã số nhân viên (VD: NV001)" value="' + (u.maSo || '') + '" style="margin-top:6px">' +
             '<input type="text" id="pb_' + btoa(u.email) + '" placeholder="Tên phòng ban" value="' + (u.phongBan || '') + '" style="margin-top:6px">' +
             '<input type="text" id="cd_' + btoa(u.email) + '" placeholder="Chức danh (VD: Trưởng phòng Kinh doanh)" value="' + (u.chucDanh || '') + '" style="margin-top:6px">' +
             '<button class="btn" style="margin-top:8px;padding:8px;font-size:12px" onclick="luuVaiTro(\'' + emailSafe + '\')">Lưu</button>' +
@@ -656,7 +1329,8 @@
     var vaiTroMoi = document.getElementById('vt_' + btoa(email)).value;
     var phongBanMoi = document.getElementById('pb_' + btoa(email)).value.trim();
     var chucDanhMoi = document.getElementById('cd_' + btoa(email)).value.trim();
-    goiServer('capNhatVaiTroPhongBan', [token, email, vaiTroMoi, phongBanMoi, chucDanhMoi])
+    var maSoMoi = document.getElementById('ms_' + btoa(email)).value.trim();
+    goiServer('capNhatVaiTroPhongBan', [token, email, vaiTroMoi, phongBanMoi, chucDanhMoi, maSoMoi])
       .then(function (res) {
         alert(res.message);
         taiQuanLyUser();
@@ -727,6 +1401,11 @@
   function hienFormDoiMatKhau() {
     document.getElementById('formDoiMatKhau').style.display = 'block';
     document.getElementById('linkMoDoiMatKhau').style.display = 'none';
+  }
+  function xuLyDoiMatKhauSubmit(event) {
+    event.preventDefault(); // chặn tải lại trang, nhưng vẫn giữ hành vi "submit" để trình duyệt đề nghị lưu/cập nhật mật khẩu
+    xuLyDoiMatKhau();
+    return false;
   }
   function xuLyDoiMatKhau() {
     var mkCu = document.getElementById('mkCu').value;
