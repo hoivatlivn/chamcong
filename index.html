@@ -130,9 +130,10 @@
     }
     .btn-vitri:hover { background: #203a43; }
     #locTuyChonBox { background: #f7f9fa; border-radius: 8px; padding: 10px; margin-bottom: 10px; }
-    #locTuyChonBox label { font-size: 12px; font-weight: 600; color: #34495e; display: block; margin: 8px 0 3px; }
+    #locTuyChonBox label, #locNhanVienBox label { font-size: 12px; font-weight: 600; color: #34495e; display: block; margin: 8px 0 3px; }
+    #locNhanVienBox { background: #f7f9fa; border-radius: 8px; padding: 10px; margin-bottom: 10px; }
     #locTuyChonBox select, #locTuyChonBox input[type="date"],
-    #xuatExcelBox select {
+    #xuatExcelBox select, #locNhanVienBox select {
       width: 100%; padding: 7px 8px; border: 1px solid #dcdde1; border-radius: 6px; font-size: 13px; box-sizing: border-box;
     }
     #xuatExcelBox label { font-size: 12px; font-weight: 600; color: #34495e; display: block; margin: 8px 0 3px; }
@@ -142,6 +143,9 @@
     table.report { width: 100%; border-collapse: collapse; font-size: 12px; }
     table.report th, table.report td { border: 1px solid #ecf0f1; padding: 6px 8px; text-align: left; }
     table.report th { background: #f4f6f7; }
+    #reportContainer { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -4px; padding: 0 4px; }
+    #reportContainer table.report { min-width: 560px; }
+    #reportContainer table.report th { white-space: nowrap; }
 
     .modal-overlay {
       display: none;
@@ -255,6 +259,7 @@
         <button class="report-tab" data-loai="TUAN" onclick="doiKhoangBaoCao('TUAN')">Tuần này</button>
         <button class="report-tab" data-loai="THANG" onclick="doiKhoangBaoCao('THANG')">Tháng này</button>
         <button class="report-tab" data-loai="TUYCHON" onclick="doiKhoangBaoCao('TUYCHON')">Tuỳ chọn</button>
+        <button class="report-tab" data-loai="NHANVIEN" onclick="doiKhoangBaoCao('NHANVIEN')">👤 Theo NV</button>
       </div>
 
       <div id="locTuyChonBox" style="display:none">
@@ -276,6 +281,16 @@
         </div>
 
         <button class="btn" onclick="xemBaoCaoTuyChinh()" style="margin-top:10px">🔍 Xem báo cáo</button>
+      </div>
+
+      <div id="locNhanVienBox" style="display:none">
+        <label>Nhân viên</label>
+        <select id="bcnvNhanVien"></select>
+        <label>Tháng</label>
+        <select id="bcnvThang"></select>
+        <label>Năm</label>
+        <select id="bcnvNam"></select>
+        <button class="btn" onclick="xemBaoCaoTheoNhanVien()" style="margin-top:10px">👤 Xem báo cáo</button>
       </div>
 
       <div id="reportContainer">Đang tải...</div>
@@ -542,7 +557,8 @@
       taiBaoCao();
       taiDanhSachNhanVienChoLoc();
       document.getElementById('xuatExcelBox').style.display = 'block';
-      khoiTaoChonThangNam();
+      khoiTaoChonThangNam('xuatThang', 'xuatNam');
+      khoiTaoChonThangNam('bcnvThang', 'bcnvNam');
     }
     if (user.vaiTro === 'admin') {
       document.getElementById('quanLyUserBox').style.display = 'block';
@@ -964,12 +980,17 @@
       tabs[i].classList.toggle('active', tabs[i].getAttribute('data-loai') === loai);
     }
 
+    document.getElementById('locTuyChonBox').style.display = (loai === 'TUYCHON') ? 'block' : 'none';
+    document.getElementById('locNhanVienBox').style.display = (loai === 'NHANVIEN') ? 'block' : 'none';
+
     if (loai === 'TUYCHON') {
-      document.getElementById('locTuyChonBox').style.display = 'block';
       document.getElementById('reportContainer').innerHTML = 'Chọn tiêu chí rồi bấm "Xem báo cáo".';
       return;
     }
-    document.getElementById('locTuyChonBox').style.display = 'none';
+    if (loai === 'NHANVIEN') {
+      document.getElementById('reportContainer').innerHTML = 'Chọn nhân viên, tháng/năm rồi bấm "Xem báo cáo".';
+      return;
+    }
     taiBaoCao();
   }
 
@@ -980,11 +1001,18 @@
       .then(function (res) {
         if (!res.success) return;
         var sel = document.getElementById('locNhanVien');
+        var sel2 = document.getElementById('bcnvNhanVien');
         res.danhSach.forEach(function (u) {
+          var nhan = (u.maSo ? u.maSo + ' - ' : '') + u.hoTen + (u.phongBan ? ' (' + u.phongBan + ')' : '');
           var opt = document.createElement('option');
           opt.value = u.email;
-          opt.textContent = (u.maSo ? u.maSo + ' - ' : '') + u.hoTen + (u.phongBan ? ' (' + u.phongBan + ')' : '');
+          opt.textContent = nhan;
           sel.appendChild(opt);
+
+          var opt2 = document.createElement('option');
+          opt2.value = u.email;
+          opt2.textContent = nhan;
+          sel2.appendChild(opt2);
         });
       })
       .catch(function () {});
@@ -1024,9 +1052,9 @@
   }
 
   /* ---------- XUẤT BẢNG CÔNG THÁNG RA FILE EXCEL ---------- */
-  function khoiTaoChonThangNam() {
-    var selThang = document.getElementById('xuatThang');
-    var selNam = document.getElementById('xuatNam');
+  function khoiTaoChonThangNam(idThang, idNam) {
+    var selThang = document.getElementById(idThang);
+    var selNam = document.getElementById(idNam);
     if (selThang.options.length > 0) return; // đã khởi tạo rồi, không lặp lại
 
     var homNay = new Date();
@@ -1226,6 +1254,62 @@
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     });
+  }
+
+  /* ---------- XEM BÁO CÁO THEO TỪNG NHÂN VIÊN (dùng lại dữ liệu bảng công tháng) ---------- */
+  var NHAN_KY_HIEU = {
+    M: { chu: 'Đi muộn', mau: '#c0392b', nen: '#fdecea' },
+    S: { chu: 'Về sớm', mau: '#b9770e', nen: '#fef5e7' },
+    KL: { chu: 'Nghỉ không lương', mau: '#ffffff', nen: '#922b21' },
+    P: { chu: 'Nghỉ phép', mau: '#1e8449', nen: '#eafaf1' }
+  };
+
+  function dinhDangOTheoNhanVien(kyHieu) {
+    if (!kyHieu) return '-';
+    var t = NHAN_KY_HIEU[kyHieu];
+    if (!t) return kyHieu;
+    return '<span style="display:inline-block;padding:2px 6px;border-radius:4px;font-weight:700;color:' + t.mau + ';background:' + t.nen + '">' + t.chu + '</span>';
+  }
+
+  function xemBaoCaoTheoNhanVien() {
+    var token = localStorage.getItem(TOKEN_KEY);
+    var email = document.getElementById('bcnvNhanVien').value;
+    var thang = document.getElementById('bcnvThang').value;
+    var nam = document.getElementById('bcnvNam').value;
+    var container = document.getElementById('reportContainer');
+
+    if (!email) { container.innerHTML = 'Vui lòng chọn nhân viên.'; return; }
+    container.textContent = 'Đang tải...';
+
+    goiServer('layBangCongThang', [token, thang, nam])
+      .then(function (res) {
+        if (!res.success) { container.textContent = res.message; return; }
+        var nv = res.danhSach.filter(function (u) { return u.email.toLowerCase() === email.toLowerCase(); })[0];
+        if (!nv) { container.innerHTML = 'Không tìm thấy dữ liệu của nhân viên này (có thể do bạn chỉ xem được nhân viên phòng mình).'; return; }
+
+        var html = '<div class="report-range">' + (nv.maSo ? nv.maSo + ' - ' : '') + nv.hoTen + (nv.phongBan ? ' (' + nv.phongBan + ')' : '') + ' - Tháng ' + res.thang + '/' + res.nam + '</div>';
+        html += '<table class="report"><tr><th>Ngày</th><th>Thứ</th><th>Vào</th><th>Ra</th></tr>';
+        nv.cacNgay.forEach(function (ngayInfo) {
+          if (ngayInfo.laChuNhat) {
+            html += '<tr style="background:#f4f4f4;color:#95a5a6"><td>' + ngayInfo.ngay + '</td><td>' + ngayInfo.thu + '</td><td colspan="2">Chủ nhật</td></tr>';
+            return;
+          }
+          html += '<tr><td>' + ngayInfo.ngay + '</td><td>' + ngayInfo.thu + '</td><td>' + dinhDangOTheoNhanVien(ngayInfo.vao) + '</td><td>' + dinhDangOTheoNhanVien(ngayInfo.ra) + '</td></tr>';
+        });
+        html += '</table>';
+
+        html += '<div class="report-range" style="margin-top:10px">' +
+          '<b>Công tháng:</b> ' + nv.congThang + ' &nbsp; ' +
+          '<b>Đi muộn:</b> ' + nv.soMuon + ' &nbsp; ' +
+          '<b>Về sớm:</b> ' + nv.soSom + ' &nbsp; ' +
+          '<b>Không lương:</b> ' + nv.soKL + ' &nbsp; ' +
+          '<b>Nghỉ phép:</b> ' + nv.soPhep + ' &nbsp; ' +
+          '<b>Công tính lương:</b> ' + nv.congTinhLuong +
+          '</div>';
+
+        container.innerHTML = html;
+      })
+      .catch(function (err) { container.textContent = 'Lỗi: ' + err.message; });
   }
 
   // Chỉ admin và giám đốc được xem vị trí GPS của nhân viên; trưởng phòng thì không.
